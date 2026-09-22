@@ -1,2 +1,2 @@
-dummy data for conflict practice
-장호진
+안녕하세요 김효민입니다.
+
