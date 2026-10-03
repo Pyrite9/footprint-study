@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>과제 목록</title>
+
+  <!-- 같은 폴더의 style.css를 불러와서 디자인을 적용 -->
+  <link rel="stylesheet" href="style.css">  
+</head>
+<body>
+
+<!-- header의 역할 : 파일 상단 영역에 제목을 표시해줌 -->
+
+  <header>
+    <h1>발자국 - 과제 목록</h1>
+  </header>
+
+<!-- main : 주요 컨텐츠 영역 -->
+
+  <main>
+
+    <!-- 과제 목록을 보여주는 영역 -->
+    <section class="task-list-section">
+      <h2>과제 목록</h2>
+      <!-- li를 이용하여 과제 하나하나 나열함 -->
+      <ul class="task-list">
+        <li class="task-item">
+            <!-- 과제명 표시 & 과제 기간 표시 -->
+          <span class="task-name">React 컴포넌트 설계</span>
+          <span class="task-period">09.28 ~ 10.05</span>
+        </li>
+        <li class="task-item">
+          <span class="task-name">API 연동 작업</span>
+          <span class="task-period">10.06 ~ 10.12</span>
+        </li>
+        <li class="task-item">
+          <span class="task-name">배포 및 테스트</span>
+          <span class="task-period">10.13 ~ 10.19</span>
+        </li>
+      </ul>
+    </section>
+
+
+    <!-- 과제를 추가하는 영역 -->
+
+    <section class="task-form-section">
+      <h2>과제 추가</h2>
+      <form>
+        <div class="form-row">
+
+            <!-- label의 for & input의 id 연결해서 라벨 클릭시 입력창 포커스 되게함 -->
+
+          <label for="task-name">과제명</label>
+          <input type="text" id="task-name" name="task-name" placeholder="과제명을 입력하세요">
+        </div>
+        <div class="form-row">
+          <label for="task-start">시작일</label>
+          <!-- type = "date"로 하면 브라우저가 날짜 선택 ui를 제공해줌  -->
+          <input type="date" id="task-start" name="task-start">
+        </div>
+        <div class="form-row">
+          <label for="task-end">종료일</label>
+          <input type="date" id="task-end" name="task-end">
+        </div>
+        <!-- type = "button"이라서 눌러도 폼이 제출되지X -->
+        <button type="button">추가</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

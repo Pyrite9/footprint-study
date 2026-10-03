@@ -1,33 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import './App.css';
+import './App.css';   //
 
-const styles = {
-  container: { padding: '20px', maxWidth: '600px', margin: '0 auto' },
-  header: { marginBottom: '20px' },
-  main: { display: 'flex', flexDirection: 'column', gap: '20px' },
-  section: { border: '1px solid #ddd', padding: '15px', borderRadius: '8px' },
-  h2: { marginTop: 0 },
-  ul: { listStyle: 'none', padding: 0 },
-  li: { display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #eee' },
-  title: { fontWeight: 'bold' },
-  period: { color: '#666' },
-  form: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  formGroup: { display: 'flex', flexDirection: 'column', gap: '5px' },
-  label: { fontSize: '14px', fontWeight: 'bold' },
-  input: { padding: '8px', borderRadius: '4px', border: '1px solid #ccc' },
-  button: { padding: '10px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' },
-  emptyText: { color: '#888', fontStyle: 'italic' }
-};
 
 
 export default function App() {
 
-  
-  const [tasks, setTasks] = useState([]);
-  const [titleInput, setTitleInput] = useState('');
-  const [periodInput, setPeriodInput] = useState('');
-  const [loading, setLoading] = useState(true);
-
+  // 상태(State) 관리
+  const [tasks, setTasks] = useState([]);    // 과제 목록 데이터를 저장하는 상태
+  const [titleInput, setTitleInput] = useState('');    // 과제명 입력창의 값
+  const [periodInput, setPeriodInput] = useState('');    // 기간 입력창의 값
+  const [loading, setLoading] = useState(true);     // 데이터 로딩 중 여부 (초기값: true)
+  // 컴포넌트 마운트 시 외부 JSON 파일 불러오기
   useEffect(() => {
     fetch('/tasks.json')
       .then((res) => {
@@ -37,34 +20,39 @@ export default function App() {
         return res.json();
       })
       .then((data) => {
-        setTasks(data);
-        setLoading(false);
+        setTasks(data);    // 불러온 데이터로 과제 목록 상태 업데이트
+        setLoading(false);    // 로딩 완료 처리
       })
       .catch((err) => {
         console.error('데이터 가져오기 실패:', err);
-        setLoading(false);
+        setLoading(false);    // 에러 발생 시에도 로딩 종료
       });
-  }, []);
+  }, []);   
 
+  // 폼 제출 시 새 과제 추가 이벤트 핸들러
   const handleSubmit = (e) => {
-    e.preventDefault();
+    e.preventDefault();  // 폼 제출 시 페이지가 새로고침되는 기본 동작 방지
 
+    // 입력값 유효성 검사 (공백 제거 후 빈 값 확인)
     if (!titleInput.trim() || !periodInput.trim()) {
       alert('과제명과 기간을 입력해주세요.');
       return;
     }
 
+    // 추가할 새 과제 객체 생성
     const newTask = {
-      id: Date.now(),
+      id: Date.now(),   // 고유한 ID 값으로 현재 시간 타임스탬프 활용
       title: titleInput,
       period: periodInput,
     };
 
+    // 기존 목록 배열에 새 항목을 추가하여 상태 업데이트
     setTasks([...tasks, newTask]);
-    setTitleInput('');
+    setTitleInput('');   // 입력창 초기화
     setPeriodInput('');
   };
 
+  // 화면 렌더링 
   return (
     <div style={styles.container}>
       <header style={styles.header}>
@@ -100,7 +88,7 @@ export default function App() {
                 id="task-title"
                 placeholder="과제명을 입력하세요"
                 value={titleInput}
-                onChange={(e) => setTitleInput(e.target.value)}
+                onChange={(e) => setTitleInput(e.target.value)}     // 입력할 때마다 상태 업데이트
                 style={styles.input}
               />
             </div>
@@ -111,7 +99,7 @@ export default function App() {
                 id="task-period"
                 placeholder="예: 2026.10.01 ~ 2026.10.08"
                 value={periodInput}
-                onChange={(e) => setPeriodInput(e.target.value)}
+                onChange={(e) => setPeriodInput(e.target.value)}  // 입력할 때마다 상태 업데이트
                 style={styles.input}
               />
             </div>

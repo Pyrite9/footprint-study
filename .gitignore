@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Logs
 logs
 *.log
@@ -22,3 +23,27 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+=======
+# Node
+node_modules/
+dist/
+
+# Java
+build/
+target/
+out/
+.gradle/
+
+# IDE
+.idea/
+*.iml
+
+# 환경 변수 (예시 파일만 올린다)
+.env*
+!.env.example
+
+# OS, 로그
+.DS_Store
+Thumbs.db
+*.log
+>>>>>>> d55b2cca03c61af8d581487432cd509645197e7e
