@@ -1,8 +1,8 @@
 package com.footprint.backend.controller;
 
 import com.footprint.backend.dto.AssignmentCreateRequest;
+import com.footprint.backend.dto.AssignmentResponse;
 import com.footprint.backend.dto.AssignmentUpdateRequest;
-import com.footprint.backend.entity.Assignment;
 import com.footprint.backend.service.AssignmentService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -15,29 +15,30 @@ import java.util.List;
 public class AssignmentController {
 
     private final AssignmentService assignmentService;
-
     public AssignmentController(AssignmentService assignmentService) {
         this.assignmentService = assignmentService;
     }
 
     @GetMapping
-    public List<Assignment> findAll() {
-        return assignmentService.findAll();
+    public List<AssignmentResponse> findAll() {
+        return assignmentService.findAll().stream()
+                .map(AssignmentResponse::from)
+                .toList();
     }
 
     @GetMapping("/{id}")
-    public Assignment findById(@PathVariable Long id) {
-        return assignmentService.findById(id);
+    public AssignmentResponse findById(@PathVariable Long id) {
+        return AssignmentResponse.from(assignmentService.findById(id));
     }
 
     @PostMapping
-    public Assignment create(@Valid @RequestBody AssignmentCreateRequest request) {
-        return  assignmentService.create(request.title(), request.description());
+    public AssignmentResponse create(@Valid @RequestBody AssignmentCreateRequest request) {
+        return AssignmentResponse.from(assignmentService.create(request.title(), request.description()));
     }
 
     @PutMapping("/{id}")
-    public Assignment update(@PathVariable Long id, @Valid @RequestBody AssignmentUpdateRequest request) {
-        return assignmentService.update(id, request.title(), request.description());
+    public AssignmentResponse update(@PathVariable Long id, @Valid @RequestBody AssignmentUpdateRequest request) {
+        return AssignmentResponse.from(assignmentService.update(id, request.title(), request.description()));
     }
 
     @DeleteMapping("/{id}")
