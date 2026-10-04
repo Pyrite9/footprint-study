@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createAssignment } from "./api/assignments";
+import { createAssignment } from "../api/assignments";
 
 function AssignmentForm({ onCreated }) {
     const [title, setTitle] = useState("");

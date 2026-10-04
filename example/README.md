@@ -148,7 +148,7 @@ http://localhost:5173 을 엽니다. A에서 `.env.local`을 만들었다면 그
 
 | 순서 | 파일 | 하는 일 |
 |---|---|---|
-| 1 | `frontend/src/AssignmentForm.jsx` | 입력값을 모아 추가를 요청합니다 |
+| 1 | `frontend/src/components/AssignmentForm.jsx` | 입력값을 모아 추가를 요청합니다 |
 | 2 | `frontend/src/api/assignments.js` | 백엔드에 HTTP 요청을 보냅니다 |
 | 3 | `backend/.../dto/AssignmentCreateRequest.java` | 요청 body를 받는 모양입니다 |
 | 4 | `backend/.../controller/AssignmentController.java` | 요청을 받아 Service를 부릅니다 |
@@ -156,9 +156,11 @@ http://localhost:5173 을 엽니다. A에서 `.env.local`을 만들었다면 그
 | 6 | `backend/.../repository/AssignmentRepository.java` | 테이블에 행을 넣습니다 |
 | 7 | `backend/.../entity/Assignment.java` | 테이블 한 행의 모양입니다 |
 | 8 | `backend/.../dto/AssignmentResponse.java` | 화면에 돌려주는 모양입니다 |
-| 9 | `frontend/src/App.jsx` | 목록을 다시 불러와 화면을 고칩니다 |
+| 9 | `frontend/src/pages/AssignmentPage.jsx` | 목록을 다시 불러와 화면을 고칩니다 |
 
-목록 조회는 `App.jsx` → `api/assignments.js` → Controller → Service → Repository 순서입니다.
+목록 조회는 `pages/AssignmentPage.jsx` → `api/assignments.js` → Controller → Service → Repository 순서입니다. 받아 온 목록은 `components/AssignmentList.jsx`가 그립니다.
+
+프론트엔드의 폴더는 3개입니다. `pages/`는 화면 하나, `components/`는 화면의 부품, `api/`는 백엔드 호출입니다.
 
 프론트엔드 담당은 1, 2, 9번을, 백엔드 담당은 3~8번을 먼저 봅니다.
 
@@ -202,6 +204,6 @@ http://localhost:5173 을 엽니다. A에서 `.env.local`을 만들었다면 그
 
 ### 5. 직접 쓴 코드에서 같은 요청이 끝없이 나갑니다
 
-`useEffect`의 두 번째 인자 `[]`가 빠졌습니다. `App.jsx`의 `useEffect`와 비교합니다.
+`useEffect`의 두 번째 인자 `[]`가 빠졌습니다. `pages/AssignmentPage.jsx`의 `useEffect`와 비교합니다.
 
 ※ 용어 — API: 프로그램끼리 주고받는 요청과 응답의 약속 · 가짜 API(mock): 실제 서버 대신 정해 둔 데이터를 돌려주는 연습용 서버 · CORS: 다른 주소의 화면이 서버 응답을 읽어도 되는지 서버가 허용하는 규칙 · DTO: 요청이나 응답으로 주고받는 데이터의 모양 · 환경 변수: 코드 밖에서 넣어 주는 설정값
