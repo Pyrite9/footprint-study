@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getAssignments } from './api/assignments';
 import AssignmentList from './AssignmentList'
 import AssignmentForm from './AssignmentForm';
 
@@ -8,19 +9,16 @@ function App() {
     const [error, setError] = useState(null);
 
     function loadAssignments() {
-        fetch('http://localhost:8080/assignments')
-            .then((res) => {
-                if (!res.ok) throw new Error('목록을 불러오지 못했습니다')
-                return res.json()
-            })
+        getAssignments()
             .then((data) => setAssignments(data))
             .catch((err) => setError(err.message))
-            .finally(() => setLoading(false))
-
+            .finally(() => setLoading(false));
     }
+
     useEffect(() => {
         loadAssignments()
     }, [])
+
     return (
         <main>
         <h1>과제 목록</h1>

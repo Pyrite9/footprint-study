@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createAssignment } from "./api/assignments";
 
 function AssignmentForm({ onCreated }) {
     const [title, setTitle] = useState("");
@@ -11,16 +12,8 @@ function AssignmentForm({ onCreated }) {
     function handleSubmit(event) {
         event.preventDefault()
         setError(null)
-
-        fetch('http://localhost:8080/assignments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json'},
-            body: JSON.stringify({title, description, startDate, endDate}),
-        })
-            .then((res) => {
-                if (!res.ok) throw new Error('등록하지 못했습니다')
-                return res.json();
-            })
+        
+        createAssignment({ title, description, startDate, endDate })
             .then(() => {
                 setTitle("");
                 setDescription("");
