@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>과제 목록</title>
+
+  <!-- 같은 폴더의 style.css를 불러와서 디자인을 적용 -->
+  <link rel="stylesheet" href="style.css">  
+</head>
+<body>
+
+<!-- header의 역할 : 파일 상단 영역에 제목을 표시해줌 -->
+
+  <header>
+    <h1>발자국 - 과제 목록</h1>
+  </header>
+
+<!-- main : 주요 컨텐츠 영역 -->
+
+  <main>
+
+    <!-- 과제 목록을 보여주는 영역 -->
+    <section class="task-list-section">
+      <h2>과제 목록</h2>
+      <ul class="task-list"></ul>
+    </section>
+
+
+    <!-- 과제를 추가하는 영역 -->
+
+    <section class="task-form-section">
+      <h2>과제 추가</h2>
+      <form>
+        <div class="form-row">
+
+            <!-- label의 for & input의 id 연결해서 라벨 클릭시 입력창 포커스 되게함 -->
+
+          <label for="task-name">과제명</label>
+          <input type="text" id="task-name" name="task-name" placeholder="과제명을 입력하세요">
+        </div>
+        <div class="form-row">
+          <label for="task-start">시작일</label>
+          <!-- type = "date"로 하면 브라우저가 날짜 선택 ui를 제공해줌  -->
+          <input type="date" id="task-start" name="task-start">
+        </div>
+        <div class="form-row">
+          <label for="task-end">종료일</label>
+          <input type="date" id="task-end" name="task-end">
+        </div>
+        <!-- 1주차와 다르게 2주차는 폼이 실제로 제출되게 해야하므로 type을 button -> submit로 수정 -->
+        <button type="submit">추가</button>
+      </form>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
