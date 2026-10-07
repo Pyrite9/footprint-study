@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>과제 목록</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>과제 목록</h1>
+    <p>이번 주 과제를 확인하세요.</p>
+  </header>
+
+  <main>
+    <section class="task-list">
+      <h2>과제</h2>
+
+      <div class="task">
+        <h3>HTML 과제</h3>
+        <p>기간: 10월 1일 ~ 10월 3일</p>
+      </div>
+
+      <div class="task">
+        <h3>CSS 과제</h3>
+        <p>기간: 10월 4일 ~ 10월 6일</p>
+      </div>
+
+      <div class="task">
+        <h3>JavaScript 과제</h3>
+        <p>기간: 10월 7일 ~ 10월 10일</p>
+      </div>
+    </section>
+
+    <section class="task-form">
+      <h2>과제 추가</h2>
+      <form>
+        <label for="title">과제명</label>
+        <input type="text" id="title" placeholder="과제명을 입력하세요">
+
+        <label for="period">기간</label>
+        <input type="text" id="period" placeholder="예: 10월 11일 ~ 10월 13일">
+
+        <button type="submit">추가</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
