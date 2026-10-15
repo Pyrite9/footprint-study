@@ -1,0 +1,18 @@
+{
+  "name": "react-homework",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "mock": "json-server --watch db.json --port 4000"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "vite": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "json-server": "0.17.4"
+  },
+  "devDependencies": {}
+}
