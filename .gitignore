@@ -1,0 +1,50 @@
+<<<<<<< HEAD
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+=======
+# Node
+node_modules/
+dist/
+
+# Java
+build/
+target/
+out/
+.gradle/
+
+# IDE
+.idea/
+*.iml
+
+# 환경 변수 (예시 파일만 올린다)
+.env*
+!.env.example
+!example/frontend/.env
+
+# OS, 로그
+.DS_Store
+Thumbs.db
+*.log
+>>>>>>> d55b2cca03c61af8d581487432cd509645197e7e
