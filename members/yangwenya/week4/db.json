@@ -1,0 +1,19 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "React에서 API 데이터 불러오기",
+      "completed": false
+    },
+    {
+      "id": 2,
+      "title": "useEffect 연습하기",
+      "completed": true
+    },
+    {
+      "id": 3,
+      "title": "Mock API 연결하기",
+      "completed": false
+    }
+  ]
+}
