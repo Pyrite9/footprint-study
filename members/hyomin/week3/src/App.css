@@ -1,0 +1,136 @@
+/* 1. 전체 페이지 기본 스타일*/
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f8f9fa;
+  font-family: sans-serif;
+  color: #333333;
+}
+
+/* 전체 앱을 감싸는 컨테이너 박스 */
+.app-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 24px;
+  background-color: #ffffff;
+  /* 본문 영역은 깔끔한 흰색 */
+  border: 1px solid #e1e4e8;
+}
+
+/* 페이지 헤더 (제목 영역) */
+.app-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.app-header h1 {
+  font-size: 24px;
+  color: #1a73e8;
+  margin: 0;
+}
+
+
+/* 2. 섹션 공통 스타일 (목록 영역 / 입력 영역 */
+.section {
+  margin-bottom: 20px;
+  padding: 16px;
+  background-color: #ffffff;
+  border: 1px solid #e1e4e8;
+  border-radius: 6px;
+}
+
+.section h2 {
+  font-size: 17px;
+  color: #202124;
+  margin-top: 0;
+  margin-bottom: 12px;
+  border-bottom: 2px solid #f1f3f4;
+  /* 제목 아래 얇은 구분선 */
+  padding-bottom: 6px;
+}
+
+
+/* 3. TaskList 컴포넌트 스타일 (과제 목록) */
+.task-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* 개별 과제 아이템 박스 */
+.task-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  background-color: #f8f9fa;
+  /* 아이템 구분을 위한 연한 배경 */
+  border-radius: 4px;
+  border-left: 3px solid #1a73e8;
+}
+
+.task-title {
+  font-weight: 600;
+  color: #3c4043;
+}
+
+.task-period {
+  font-size: 13px;
+  color: #5f6368;
+  background-color: #e8f0fe;
+  /* 연한 파란색 배경으로 기간 강조 */
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
+/* 로딩 중이거나 과제가 없을 때의 안내 문구 */
+.empty-text,
+.loading-text {
+  color: #5f6368;
+  text-align: center;
+  margin: 10px 0;
+}
+
+
+/* 4. TaskForm 컴포넌트 스타일 (과제 입력 폼) */
+.task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-row label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5f6368;
+}
+
+.form-row input {
+  padding: 9px 10px;
+  font-size: 14px;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+
+/* 추가하기 버튼 스타일 */
+.submit-btn {
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: #1a73e8;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 4px;
+}
