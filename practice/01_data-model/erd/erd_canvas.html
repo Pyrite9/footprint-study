@@ -1,0 +1,468 @@
+<title>발자국 ERD 캔버스</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+/* 레이아웃: 위 도구 막대, 왼쪽 단계·범례 패널, 가운데 끌어서 움직이는 캔버스, 테이블을 고르면 오른쪽에 설명 서랍. 가독성 우선의 흰 바탕 고대비 */
+:root {
+  --bg: #F4F5F7; --surface: #FFFFFF; --ink: #111827; --text: #1F2937; --muted: #4B5563; --line: #D1D5DB;
+  --core: #1E2A3A; --later: #D6DEE8; --accent: #C2410C; --hit: #FFF1C2; --band: #F3F4F6;
+  --sans: 'Noto Sans KR', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'Consolas', monospace;
+  color-scheme: light;
+}
+html, body { height: 100%; }
+h1, h2, h3, h4, p, ul, dl, dd { margin: 0; }
+body { background: var(--bg); color: var(--text); font: 17px/1.6 var(--sans); }
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr; }
+header {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; padding-block: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--surface); border-bottom: 1px solid var(--line);
+}
+header h1 { font-size: 24px; font-weight: 900; color: var(--ink); letter-spacing: -0.4px; }
+header .meta { color: var(--muted); font-size: 16px; }
+.spacer { flex: 1; }
+.seg { display: inline-flex; border: 2px solid var(--core); border-radius: 6px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); color: var(--core); font: 700 17px var(--sans); padding: 7px 20px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--core); color: #FFFFFF; }
+.tools { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+.tools button { border: 1px solid #9CA3AF; background: var(--surface); color: var(--ink); font: 500 16px var(--sans); padding: 6px 14px; border-radius: 6px; cursor: pointer; min-width: 44px; }
+.tools button:hover, .seg button:hover { filter: brightness(0.95); }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.main { display: grid; grid-template-columns: 330px 1fr; min-height: 0; }
+.main.wide { grid-template-columns: 1fr; }
+.main.wide aside.panel { display: none; }
+aside.panel { background: var(--surface); border-right: 1px solid var(--line); overflow-y: auto; padding: 20px 20px 32px max(20px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 26px; min-width: 0; }
+.panel h2 { font-size: 17px; font-weight: 700; color: var(--ink); padding-bottom: 8px; border-bottom: 2px solid var(--ink); margin-bottom: 12px; }
+.levels { display: flex; flex-direction: column; gap: 12px; }
+.lv { display: grid; grid-template-columns: 66px 1fr; gap: 8px; align-items: start; }
+.lv .n { font: 700 17px var(--sans); color: var(--ink); line-height: 1.3; padding-top: 4px; }
+.lv .n small { display: block; font: 500 14px var(--sans); color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 500 15px var(--mono); border: 1.5px solid #9CA3AF; background: var(--surface); color: var(--ink); padding: 3px 9px; border-radius: 4px; cursor: pointer; }
+.chip.core { border-color: var(--core); }
+.chip.on { background: var(--core); color: #FFFFFF; border-color: var(--core); }
+.chip.rel { background: var(--hit); border-color: #B45309; }
+.legend { display: flex; flex-direction: column; gap: 10px; font-size: 16px; }
+.legend b { color: var(--ink); }
+.colors { display: grid; grid-template-columns: 30px 1fr; gap: 8px 10px; align-items: center; }
+.colors i { display: block; height: 5px; border-radius: 1px; }
+.colors code { font: 500 15px var(--mono); color: var(--ink); }
+.ends { display: grid; grid-template-columns: 46px 1fr; gap: 6px 10px; align-items: center; }
+.ends svg { display: block; }
+.canvas { position: relative; overflow: hidden; background: var(--surface); cursor: grab; touch-action: none; min-width: 0; }
+.canvas.dragging { cursor: grabbing; }
+.stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+@media (prefers-reduced-motion: no-preference) { .stage.anim { transition: transform .4s ease; } }
+.status { position: absolute; left: 50%; top: 40%; transform: translateX(-50%); color: var(--muted); font-size: 18px; }
+.erd { display: block; }
+.erd text { font-family: var(--sans); }
+.erd text.mono { font-family: var(--mono); }
+.erd g.node { cursor: pointer; }
+.erd.focus g.node:not(.on) { opacity: 0.12; }
+.erd.focus g.edge:not(.on) { opacity: 0.05; }
+.erd g.node.sel .frame { stroke: var(--accent); stroke-width: 5; }
+.erd g.edge .ln, .erd g.edge .mk { stroke-width: 2.6; fill: none; }
+.erd g.edge .mk.dot { fill: #FFFFFF; }
+.erd.focus g.edge.on .ln, .erd.focus g.edge.on .mk { stroke-width: 4; }
+.erd g.edge .lab rect { fill: #FFFFFF; stroke: currentColor; stroke-width: 1; }
+.erd g.edge .lab text { font-size: 15px; font-weight: 700; }
+.erd g.node .row.hit rect { fill: var(--hit); }
+.band rect { fill: var(--band); }
+.band text { font: 900 22px var(--sans); fill: var(--ink); }
+.band text.sub { font: 500 16px var(--sans); fill: var(--muted); }
+.hint { position: absolute; left: max(14px, env(safe-area-inset-left, 0px)); bottom: 14px; font-size: 15px; color: var(--text); background: rgba(255,255,255,0.95); border: 1px solid var(--line); padding: 6px 11px; border-radius: 6px; pointer-events: none; }
+/* 설명 서랍 */
+.drawer[hidden] { display: none; }
+.drawer { box-sizing: border-box; position: absolute; top: 14px; right: max(14px, env(safe-area-inset-right, 0px)); bottom: 14px; width: min(480px, calc(100% - 28px)); background: var(--surface); border: 1px solid #9CA3AF; border-radius: 8px; box-shadow: 0 10px 30px rgba(17,24,39,0.18); overflow-y: auto; padding: 22px 24px 28px; display: flex; flex-direction: column; gap: 20px; cursor: auto; }
+.drawer .top { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.drawer .lvtag { display: inline-block; font: 700 14px var(--sans); color: #FFFFFF; background: var(--core); padding: 2px 10px; border-radius: 4px; }
+.drawer .lvtag.later { background: #6B7280; }
+.drawer .lvtag.plan { background: var(--accent); margin-left: 6px; }
+.drawer h3 { font-size: 30px; font-weight: 900; color: var(--ink); line-height: 1.25; margin-top: 8px; }
+.drawer h3 code { display: block; font: 500 18px var(--mono); color: var(--muted); }
+.drawer .close { border: 1px solid #9CA3AF; background: var(--surface); font: 500 16px var(--sans); padding: 5px 12px; border-radius: 6px; cursor: pointer; color: var(--ink); }
+.drawer .purpose { font-size: 18px; line-height: 1.7; color: var(--ink); }
+.drawer .facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; font-size: 16px; background: var(--bg); padding: 12px 14px; border-radius: 6px; }
+.drawer .facts dt { color: var(--muted); }
+.drawer h4 { font-size: 19px; font-weight: 900; color: var(--ink); padding-bottom: 6px; border-bottom: 2px solid var(--ink); }
+.drawer h4 small { font: 500 15px var(--sans); color: var(--muted); margin-left: 6px; }
+.drawer .none { color: var(--muted); font-size: 16px; }
+.rels { display: flex; flex-direction: column; gap: 12px; }
+.rel { border: 1px solid var(--line); border-left: 6px solid var(--c); border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.rel button.to { all: unset; cursor: pointer; font: 900 19px var(--sans); color: var(--ink); }
+.rel button.to:hover { text-decoration: underline; }
+.rel button.to:focus-visible { outline: 3px solid var(--accent); }
+.rel button.to code { font: 500 15px var(--mono); color: var(--muted); margin-left: 6px; }
+.rel .key { font: 500 15px var(--mono); color: var(--ink); background: var(--bg); padding: 3px 8px; border-radius: 4px; align-self: start; word-break: break-all; }
+.rel .what { font-size: 16px; color: var(--text); }
+.rel .card { font-size: 16px; color: var(--ink); font-weight: 700; }
+.paths { display: flex; flex-direction: column; gap: 4px; font: 500 15px var(--mono); color: var(--ink); }
+.warn { font-size: 16px; background: #FEF3C7; border: 1px solid #F59E0B; padding: 10px 12px; border-radius: 6px; color: var(--ink); }
+@media (max-width: 860px) {
+  .main { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  aside.panel { border-right: 0; border-bottom: 1px solid var(--line); max-height: 38vh; padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+  .canvas { min-height: 60vh; }
+  .drawer { top: auto; height: 62%; }
+}
+@media (prefers-reduced-motion: no-preference) { .erd g.node, .erd g.edge { transition: opacity .15s; } }
+</style>
+
+<div class="app">
+  <header>
+    <h1>발자국 ERD 캔버스</h1>
+    <span class="meta" id="meta">테이블 12개, 외래 키 21개, 참조 깊이 6단계</span>
+    <span class="spacer"></span>
+    <div class="seg" role="group" aria-label="모델 선택">
+      <button id="vp" aria-pressed="true">물리</button>
+      <button id="vl" aria-pressed="false">논리</button>
+    </div>
+    <div class="tools">
+      <button id="zout" aria-label="축소">−</button>
+      <button id="zin" aria-label="확대">+</button>
+      <button id="z100">100%</button>
+      <button id="zfit">화면에 맞춤</button>
+      <button id="panelBtn" aria-pressed="false">패널 숨기기</button>
+    </div>
+  </header>
+  <div class="main">
+    <aside class="panel">
+      <section>
+        <h2>참조 깊이 단계</h2>
+        <div class="levels" id="levels"></div>
+      </section>
+      <section>
+        <h2>읽는 법</h2>
+        <div class="legend">
+          <span><b>단계</b>: 외래 키가 없는 테이블이 0단계. 나머지는 가리키는 테이블 중 가장 깊은 단계에 1을 더함</span>
+          <span><b>연결선</b>: 물리에서는 외래 키 컬럼에서 나와 참조하는 기본 키 컬럼으로 들어감. 논리에서는 부모의 식별자에서 자식의 이름 칸으로 들어감</span>
+          <span><b>선 색</b>: 어느 테이블의 기본 키를 가리키는지</span>
+          <div class="colors" id="colors"></div>
+          <span><b>선 끝</b></span>
+          <div class="ends" id="ends"></div>
+          <span><b>점선</b>: 완료확인은 산출물과 기여 항목 중 하나만 가리킴</span>
+          <span><b>선택</b>: 테이블을 누르면 오른쪽에 설명이 열리고, 연쇄에 든 테이블과 선만 남음</span>
+        </div>
+      </section>
+    </aside>
+    <div class="canvas" id="canvas">
+      <div class="stage" id="stage"></div>
+      <p class="status" id="status">배치를 계산하는 중</p>
+      <div class="hint">끌어서 이동, 휠로 확대, 테이블을 누르면 설명, Esc로 닫기</div>
+      <section class="drawer" id="drawer" hidden aria-live="polite"></section>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>
+<script>
+const D = {"levels": [{"n": 0, "tables": ["member"]}, {"n": 1, "tables": ["assignment"]}, {"n": 2, "tables": ["team"]}, {"n": 3, "tables": ["notification", "team_member"]}, {"n": 4, "tables": ["leader_history", "role_history", "contribution", "deliverable", "evaluation", "evaluation_draft"]}, {"n": 5, "tables": ["confirmation"]}], "tables": {"member": {"name": "회원", "desc": "서비스에 로그인하는 교수와 학생", "purpose": "서비스에 로그인하는 모든 사람의 계정임. 교수와 학생을 회원 유형으로 구분하고, 이메일이 로그인 아이디임. 학교 구글 계정으로 가입한 회원은 비밀번호가 없음. 개인정보 고지에 동의한 시각도 여기에 남김.", "row": "교수 또는 학생 계정 하나", "level": 0, "cols": 6, "p": {"rows": [{"c": "id", "cells": ["id", "bigint", "NOT NULL", "PK"], "pk": true, "note": "회원을 구분하는 번호"}, {"c": "email", "cells": ["email", "varchar(255)", "NOT NULL", "UK"], "pk": false, "note": "로그인 아이디. 같은 이메일은 한 번만 가입"}, {"c": "password", "cells": ["password", "varchar(255)", "NULL", ""], "pk": false, "note": ""}, {"c": "name", "cells": ["name", "varchar(255)", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "member_type", "cells": ["member_type", "varchar(255)", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "privacy_consented_at", "cells": ["privacy_consented_at", "timestamp", "NULL", ""], "pk": false, "note": ""}], "notes": ["CHECK: 회원 유형은 교수와 학생 중 하나"]}, "l": {"rows": [{"c": "id", "cells": ["회원 번호", "번호", "식별자"], "pk": true, "note": ""}, {"c": "email", "cells": ["이메일", "짧은 글", "필수"], "pk": false, "note": ""}, {"c": "password", "cells": ["비밀번호", "짧은 글", "선택"], "pk": false, "note": ""}, {"c": "name", "cells": ["이름", "짧은 글", "필수"], "pk": false, "note": ""}, {"c": "member_type", "cells": ["회원 유형", "유형", "필수"], "pk": false, "note": ""}, {"c": "privacy_consented_at", "cells": ["고지 동의 시각", "시각", "선택"], "pk": false, "note": ""}], "notes": []}}, "assignment": {"name": "과제", "desc": "교수가 만든 조별과제와 진행 단계", "purpose": "교수가 수업에서 낸 조별과제 하나임. 기간과 진행 단계를 가짐. 기록 단계에서는 과정 기록을 쌓고, 교수가 평가 단계로 바꾸면 과정 기록을 더 고칠 수 없고 동료평가만 받음. 평가 단계는 되돌리지 않음.", "row": "교수가 만든 과제 하나", "level": 1, "cols": 7, "p": {"rows": [{"c": "id", "cells": ["id", "bigint", "NOT NULL", "PK"], "pk": true, "note": "과제를 구분하는 번호"}, {"c": "title", "cells": ["title", "varchar(255)", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "start_date", "cells": ["start_date", "date", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "end_date", "cells": ["end_date", "date", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "professor_id", "cells": ["professor_id", "bigint", "NOT NULL", "FK member"], "pk": false, "note": "과제를 만든 교수 회원"}, {"c": "phase", "cells": ["phase", "varchar(255)", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "evaluation_started_at", "cells": ["evaluation_started_at", "timestamp", "NULL", ""], "pk": false, "note": ""}], "notes": ["CHECK: 과제 단계는 기록과 평가 중 하나", "CHECK: 종료일은 시작일과 같거나 뒤", "CHECK: 평가 시작 시각은 평가 단계에서만 있음"]}, "l": {"rows": [{"c": "id", "cells": ["과제 번호", "번호", "식별자"], "pk": true, "note": ""}, {"c": "title", "cells": ["제목", "짧은 글", "필수"], "pk": false, "note": ""}, {"c": "start_date", "cells": ["시작일", "날짜", "필수"], "pk": false, "note": ""}, {"c": "end_date", "cells": ["종료일", "날짜", "필수"], "pk": false, "note": ""}, {"c": "phase", "cells": ["과제 단계", "유형", "필수"], "pk": false, "note": ""}, {"c": "evaluation_started_at", "cells": ["평가 시작 시각", "시각", "선택"], "pk": false, "note": ""}], "notes": ["종료일은 시작일과 같거나 뒤", "평가 시작 시각은 평가 단계에서만 있음"]}}, "team": {"name": "조", "desc": "과제에 속한 조와 초대 코드", "purpose": "과제 아래에 있는 조 하나임. 교수가 과제를 만들 때 조와 조장을 함께 만들고, 조원은 초대 코드가 든 링크로 합류함.", "row": "과제에 속한 조 하나", "level": 2, "cols": 4, "p": {"rows": [{"c": "id", "cells": ["id", "bigint", "NOT NULL", "PK"], "pk": true, "note": "조를 구분하는 번호"}, {"c": "assignment_id", "cells": ["assignment_id", "bigint", "NOT NULL", "FK assignment"], "pk": false, "note": "조가 속한 과제"}, {"c": "name", "cells": ["name", "varchar(255)", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "invite_code", "cells": ["invite_code", "varchar(255)", "NULL", "UK"], "pk": false, "note": "초대 링크에 넣는 코드. 발급 전에는 없음"}], "notes": []}, "l": {"rows": [{"c": "id", "cells": ["조 번호", "번호", "식별자"], "pk": true, "note": ""}, {"c": "name", "cells": ["조 이름", "짧은 글", "필수"], "pk": false, "note": ""}, {"c": "invite_code", "cells": ["초대 코드", "짧은 글", "선택"], "pk": false, "note": ""}], "notes": []}}, "team_member": {"name": "조 참여", "desc": "어느 회원이 어느 조에 어떤 역할로 있는지", "purpose": "회원 한 명이 조 하나에 들어간 기록임. 조장 여부와 지금 맡은 역할을 가짐. 산출물, 기여 항목, 완료확인, 평가가 모두 회원이 아니라 이 행을 가리키므로, 요청마다 그 조의 조원인지 검사하는 기준이 됨.", "row": "회원 한 명이 조 하나에 참여한 기록", "level": 3, "cols": 7, "p": {"rows": [{"c": "id", "cells": ["id", "bigint", "NOT NULL", "PK"], "pk": true, "note": "과정 기록과 평가가 가리키는 번호"}, {"c": "team_id", "cells": ["team_id", "bigint", "NOT NULL", "FK team"], "pk": false, "note": "참여한 조"}, {"c": "assignment_id", "cells": ["assignment_id", "bigint", "NOT NULL", "FK assignment, UK1"], "pk": false, "note": "조의 과제 번호를 복사한 값"}, {"c": "member_id", "cells": ["member_id", "bigint", "NOT NULL", "FK member, UK1"], "pk": false, "note": "참여한 회원"}, {"c": "leader", "cells": ["leader", "boolean", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "role_name", "cells": ["role_name", "varchar(255)", "NULL", ""], "pk": false, "note": ""}, {"c": "role_assigned_at", "cells": ["role_assigned_at", "timestamp", "NULL", ""], "pk": false, "note": ""}], "notes": ["UK1: 같은 과제에서 회원 한 명은 한 조에만 참여"]}, "l": {"rows": [{"c": "id", "cells": ["조 참여 번호", "번호", "식별자"], "pk": true, "note": ""}, {"c": "leader", "cells": ["조장 여부", "여부", "필수"], "pk": false, "note": ""}, {"c": "role_name", "cells": ["역할명", "짧은 글", "선택"], "pk": false, "note": ""}, {"c": "role_assigned_at", "cells": ["역할 지정 시각", "시각", "선택"], "pk": false, "note": ""}], "notes": ["같은 과제에서 한 조에만 참여"]}}, "role_history": {"name": "역할 이력", "desc": "바뀌기 전 역할", "purpose": "조장이 조원의 역할을 바꿀 때 바뀌기 전 역할과 그 역할을 지정했던 시각을 남김. 역할을 덮어쓰면 사라지는 기록을 보존해, 언제 무슨 역할을 맡았는지를 역할 수행 평가의 근거로 씀.", "row": "역할이 한 번 바뀐 기록", "level": 4, "cols": 5, "p": {"rows": [{"c": "id", "cells": ["id", "bigint", "NOT NULL", "PK"], "pk": true, "note": "역할 이력을 구분하는 번호"}, {"c": "team_member_id", "cells": ["team_member_id", "bigint", "NOT NULL", "FK team_member"], "pk": false, "note": "역할이 바뀐 조원"}, {"c": "previous_role_name", "cells": ["previous_role_name", "varchar(255)", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "previous_role_assigned_at", "cells": ["previous_role_assigned_at", "timestamp", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "changed_at", "cells": ["changed_at", "timestamp", "NOT NULL", ""], "pk": false, "note": ""}], "notes": []}, "l": {"rows": [{"c": "id", "cells": ["역할 이력 번호", "번호", "식별자"], "pk": true, "note": ""}, {"c": "previous_role_name", "cells": ["이전 역할명", "짧은 글", "필수"], "pk": false, "note": ""}, {"c": "previous_role_assigned_at", "cells": ["이전 역할 지정 시각", "시각", "필수"], "pk": false, "note": ""}, {"c": "changed_at", "cells": ["바뀐 시각", "시각", "필수"], "pk": false, "note": ""}], "notes": []}}, "leader_history": {"name": "조장 교체 이력", "desc": "조장이 바뀐 기록", "purpose": "조장이 바뀔 때마다 이전 조장과 새 조장을 한 행으로 남김. 조장 교체는 서버가 조를 잠근 뒤 처리함.", "row": "조장이 한 번 바뀐 기록", "level": 4, "cols": 5, "p": {"rows": [{"c": "id", "cells": ["id", "bigint", "NOT NULL", "PK"], "pk": true, "note": "조장 교체 이력을 구분하는 번호"}, {"c": "team_id", "cells": ["team_id", "bigint", "NOT NULL", "FK team"], "pk": false, "note": "조장이 바뀐 조"}, {"c": "previous_leader_id", "cells": ["previous_leader_id", "bigint", "NOT NULL", "FK team_member"], "pk": false, "note": "새 조장과 다른 조원"}, {"c": "new_leader_id", "cells": ["new_leader_id", "bigint", "NOT NULL", "FK team_member"], "pk": false, "note": "새로 조장이 된 조원"}, {"c": "changed_at", "cells": ["changed_at", "timestamp", "NOT NULL", ""], "pk": false, "note": ""}], "notes": ["CHECK: 이전 조장과 새 조장은 다른 조원"]}, "l": {"rows": [{"c": "id", "cells": ["조장 교체 이력 번호", "번호", "식별자"], "pk": true, "note": ""}, {"c": "changed_at", "cells": ["바뀐 시각", "시각", "필수"], "pk": false, "note": ""}], "notes": ["이전 조장과 새 조장은 다른 조원"]}}, "deliverable": {"name": "산출물", "desc": "조원이 올린 결과 파일의 정보", "purpose": "조원이 올린 결과 파일의 정보임. 파일 본문은 파일 저장소에 두고, 여기에는 이름, 크기, 저장 위치, 올린 시각을 둠. 올릴 때의 역할명을 복사해 두어 나중에 역할이 바뀌어도 그대로임. 지워도 행은 남고 삭제 시각만 기록함.", "row": "조원이 올린 파일 하나", "level": 4, "cols": 8, "p": {"rows": [{"c": "id", "cells": ["id", "bigint", "NOT NULL", "PK"], "pk": true, "note": "산출물을 구분하는 번호"}, {"c": "team_member_id", "cells": ["team_member_id", "bigint", "NOT NULL", "FK team_member"], "pk": false, "note": "산출물을 올린 조원"}, {"c": "role_name", "cells": ["role_name", "varchar(255)", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "file_name", "cells": ["file_name", "varchar(255)", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "file_size", "cells": ["file_size", "bigint", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "storage_key", "cells": ["storage_key", "varchar(255)", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "uploaded_at", "cells": ["uploaded_at", "timestamp", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "deleted_at", "cells": ["deleted_at", "timestamp", "NULL", ""], "pk": false, "note": ""}], "notes": ["CHECK: 빈 파일은 저장하지 않음"]}, "l": {"rows": [{"c": "id", "cells": ["산출물 번호", "번호", "식별자"], "pk": true, "note": ""}, {"c": "role_name", "cells": ["역할명", "짧은 글", "필수"], "pk": false, "note": ""}, {"c": "file_name", "cells": ["파일 이름", "짧은 글", "필수"], "pk": false, "note": ""}, {"c": "file_size", "cells": ["파일 크기", "크기", "필수"], "pk": false, "note": ""}, {"c": "storage_key", "cells": ["저장 위치", "짧은 글", "필수"], "pk": false, "note": ""}, {"c": "uploaded_at", "cells": ["올린 시각", "시각", "필수"], "pk": false, "note": ""}, {"c": "deleted_at", "cells": ["삭제 시각", "시각", "선택"], "pk": false, "note": ""}], "notes": ["파일 크기는 1바이트 이상"]}}, "contribution": {"name": "기여 항목", "desc": "회의 진행처럼 파일로 남지 않는 기여", "purpose": "회의 진행이나 자료 취합처럼 파일로 남지 않는 기여 하나임. 조에 등록하고 담당 조원을 정하며, 담당 조원이 완료 보고를 함. 보고 전에는 취소할 수 있고 취소해도 행은 남음.", "row": "조에 등록한 기여 하나", "level": 4, "cols": 8, "p": {"rows": [{"c": "id", "cells": ["id", "bigint", "NOT NULL", "PK"], "pk": true, "note": "기여 항목을 구분하는 번호"}, {"c": "team_id", "cells": ["team_id", "bigint", "NOT NULL", "FK team"], "pk": false, "note": "항목이 속한 조"}, {"c": "assignee_id", "cells": ["assignee_id", "bigint", "NOT NULL", "FK team_member"], "pk": false, "note": "같은 조의 조원"}, {"c": "title", "cells": ["title", "varchar(255)", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "created_at", "cells": ["created_at", "timestamp", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "report_memo", "cells": ["report_memo", "varchar(2000)", "NULL", ""], "pk": false, "note": ""}, {"c": "reported_at", "cells": ["reported_at", "timestamp", "NULL", ""], "pk": false, "note": ""}, {"c": "canceled_at", "cells": ["canceled_at", "timestamp", "NULL", ""], "pk": false, "note": ""}], "notes": []}, "l": {"rows": [{"c": "id", "cells": ["기여 항목 번호", "번호", "식별자"], "pk": true, "note": ""}, {"c": "title", "cells": ["항목명", "짧은 글", "필수"], "pk": false, "note": ""}, {"c": "created_at", "cells": ["등록 시각", "시각", "필수"], "pk": false, "note": ""}, {"c": "report_memo", "cells": ["완료 보고 메모", "긴 글", "선택"], "pk": false, "note": ""}, {"c": "reported_at", "cells": ["완료 보고 시각", "시각", "선택"], "pk": false, "note": ""}, {"c": "canceled_at", "cells": ["취소 시각", "시각", "선택"], "pk": false, "note": ""}], "notes": []}}, "confirmation": {"name": "완료확인", "desc": "다른 조원이 산출물 또는 기여 항목을 확인한 기록", "purpose": "다른 조원이 산출물이나 기여 항목을 보고 완료를 확인한 기록임. 대상은 둘 중 정확히 하나이고, 자기 기록은 확인할 수 없음. 확인을 취소해도 행은 남고 취소 시각만 기록함.", "row": "조원 한 명이 기록 하나를 확인한 것", "level": 5, "cols": 6, "p": {"rows": [{"c": "id", "cells": ["id", "bigint", "NOT NULL", "PK"], "pk": true, "note": "완료확인을 구분하는 번호"}, {"c": "confirmer_id", "cells": ["confirmer_id", "bigint", "NOT NULL", "FK team_member"], "pk": false, "note": "기록을 올리거나 맡은 조원이 아닌 조원"}, {"c": "deliverable_id", "cells": ["deliverable_id", "bigint", "NULL", "FK deliverable"], "pk": false, "note": "산출물을 확인했으면 있음"}, {"c": "contribution_id", "cells": ["contribution_id", "bigint", "NULL", "FK contribution"], "pk": false, "note": "기여 항목을 확인했으면 있음"}, {"c": "confirmed_at", "cells": ["confirmed_at", "timestamp", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "canceled_at", "cells": ["canceled_at", "timestamp", "NULL", ""], "pk": false, "note": ""}], "notes": ["CHECK: 확인 대상은 산출물과 기여 항목 중 하나"]}, "l": {"rows": [{"c": "id", "cells": ["완료확인 번호", "번호", "식별자"], "pk": true, "note": ""}, {"c": "confirmed_at", "cells": ["확인 시각", "시각", "필수"], "pk": false, "note": ""}, {"c": "canceled_at", "cells": ["취소 시각", "시각", "선택"], "pk": false, "note": ""}], "notes": ["대상은 산출물과 기여 항목 중 정확히 하나"]}}, "evaluation": {"name": "평가", "desc": "제출한 동료평가", "purpose": "평가 단계에서 조원이 다른 조원 한 명에게 제출한 동료평가임. 행동기준평정척도 6개 항목을 1~5점으로 매기고 서술 의견을 덧붙일 수 있음. 점수와 의견은 교수만 열람하고 시스템이 합산하지 않음.", "row": "평가자 한 명이 대상 한 명을 평가한 것", "level": 4, "cols": 11, "p": {"rows": [{"c": "id", "cells": ["id", "bigint", "NOT NULL", "PK"], "pk": true, "note": "평가를 구분하는 번호"}, {"c": "evaluator_id", "cells": ["evaluator_id", "bigint", "NOT NULL", "FK team_member, UK1"], "pk": false, "note": "평가한 조원. 대상과 다름"}, {"c": "target_id", "cells": ["target_id", "bigint", "NOT NULL", "FK team_member, UK1"], "pk": false, "note": "평가받은 조원"}, {"c": "goal_sharing", "cells": ["goal_sharing", "integer", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "role_fulfillment", "cells": ["role_fulfillment", "integer", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "encouragement", "cells": ["encouragement", "integer", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "online_communication", "cells": ["online_communication", "integer", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "offline_communication", "cells": ["offline_communication", "integer", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "progress_check", "cells": ["progress_check", "integer", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "comment", "cells": ["comment", "varchar(2000)", "NULL", ""], "pk": false, "note": ""}, {"c": "submitted_at", "cells": ["submitted_at", "timestamp", "NOT NULL", ""], "pk": false, "note": ""}], "notes": ["UK1: 같은 평가자는 같은 대상을 한 번만 평가", "CHECK: 자기 자신은 평가하지 않음", "CHECK: 점수 6개는 모두 1~5"]}, "l": {"rows": [{"c": "id", "cells": ["평가 번호", "번호", "식별자"], "pk": true, "note": ""}, {"c": "goal_sharing", "cells": ["목표 공유·협업", "점수", "필수"], "pk": false, "note": ""}, {"c": "role_fulfillment", "cells": ["역할 수행", "점수", "필수"], "pk": false, "note": ""}, {"c": "encouragement", "cells": ["격려·도움", "점수", "필수"], "pk": false, "note": ""}, {"c": "online_communication", "cells": ["온라인 소통", "점수", "필수"], "pk": false, "note": ""}, {"c": "offline_communication", "cells": ["대면 소통", "점수", "필수"], "pk": false, "note": ""}, {"c": "progress_check", "cells": ["진행 점검·보충", "점수", "필수"], "pk": false, "note": ""}, {"c": "comment", "cells": ["서술 의견", "긴 글", "선택"], "pk": false, "note": ""}, {"c": "submitted_at", "cells": ["제출 시각", "시각", "필수"], "pk": false, "note": ""}], "notes": ["자기 자신은 평가할 수 없음", "평가자와 대상 조합마다 한 번"]}}, "evaluation_draft": {"name": "평가 임시 저장", "desc": "제출 전 동료평가 입력값. 제출하면 지움", "purpose": "동료평가를 제출하기 전에 저장해 둔 입력값임. 고른 점수만 저장하고, 평가를 제출하면 지움. 과정 기록이 아니므로 남기지 않음.", "row": "제출 전 평가 대상 한 명에 대한 입력값", "level": 4, "cols": 11, "p": {"rows": [{"c": "id", "cells": ["id", "bigint", "NOT NULL", "PK"], "pk": true, "note": "임시 저장을 구분하는 번호"}, {"c": "evaluator_id", "cells": ["evaluator_id", "bigint", "NOT NULL", "FK team_member, UK1"], "pk": false, "note": "저장한 조원. 대상과 다름"}, {"c": "target_id", "cells": ["target_id", "bigint", "NOT NULL", "FK team_member, UK1"], "pk": false, "note": "평가 대상 조원"}, {"c": "goal_sharing", "cells": ["goal_sharing", "integer", "NULL", ""], "pk": false, "note": ""}, {"c": "role_fulfillment", "cells": ["role_fulfillment", "integer", "NULL", ""], "pk": false, "note": ""}, {"c": "encouragement", "cells": ["encouragement", "integer", "NULL", ""], "pk": false, "note": ""}, {"c": "online_communication", "cells": ["online_communication", "integer", "NULL", ""], "pk": false, "note": ""}, {"c": "offline_communication", "cells": ["offline_communication", "integer", "NULL", ""], "pk": false, "note": ""}, {"c": "progress_check", "cells": ["progress_check", "integer", "NULL", ""], "pk": false, "note": ""}, {"c": "comment", "cells": ["comment", "varchar(2000)", "NULL", ""], "pk": false, "note": ""}, {"c": "saved_at", "cells": ["saved_at", "timestamp", "NOT NULL", ""], "pk": false, "note": ""}], "notes": ["UK1: 평가자와 대상 조합마다 하나", "CHECK: 자기 자신은 평가하지 않음", "CHECK: 고른 점수는 1~5. 고르지 않은 점수는 비워 둠"]}, "l": {"rows": [{"c": "id", "cells": ["임시 저장 번호", "번호", "식별자"], "pk": true, "note": ""}, {"c": "goal_sharing", "cells": ["목표 공유·협업", "점수", "선택"], "pk": false, "note": ""}, {"c": "role_fulfillment", "cells": ["역할 수행", "점수", "선택"], "pk": false, "note": ""}, {"c": "encouragement", "cells": ["격려·도움", "점수", "선택"], "pk": false, "note": ""}, {"c": "online_communication", "cells": ["온라인 소통", "점수", "선택"], "pk": false, "note": ""}, {"c": "offline_communication", "cells": ["대면 소통", "점수", "선택"], "pk": false, "note": ""}, {"c": "progress_check", "cells": ["진행 점검·보충", "점수", "선택"], "pk": false, "note": ""}, {"c": "comment", "cells": ["서술 의견", "긴 글", "선택"], "pk": false, "note": ""}, {"c": "saved_at", "cells": ["저장 시각", "시각", "필수"], "pk": false, "note": ""}], "notes": ["평가자와 대상 조합마다 하나", "자기 자신은 평가할 수 없음"]}}, "notification": {"name": "알림", "desc": "평가 시작, 담당 지정, 완료 보고를 회원에게 알리는 안내", "purpose": "평가 시작, 기여 항목 담당 지정, 완료 보고를 받는 회원에게 알림을 남김. 읽으면 읽은 시각을 기록함. 점수와 평가 의견은 담지 않음.", "row": "회원 한 명에게 보낸 알림 하나", "level": 3, "cols": 7, "p": {"rows": [{"c": "id", "cells": ["id", "bigint", "NOT NULL", "PK"], "pk": true, "note": "알림을 구분하는 번호"}, {"c": "recipient_id", "cells": ["recipient_id", "bigint", "NOT NULL", "FK member"], "pk": false, "note": "알림을 받는 회원"}, {"c": "team_id", "cells": ["team_id", "bigint", "NOT NULL", "FK team"], "pk": false, "note": "알림이 생긴 조"}, {"c": "type", "cells": ["type", "varchar(255)", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "message", "cells": ["message", "varchar(255)", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "created_at", "cells": ["created_at", "timestamp", "NOT NULL", ""], "pk": false, "note": ""}, {"c": "read_at", "cells": ["read_at", "timestamp", "NULL", ""], "pk": false, "note": ""}], "notes": ["CHECK: 알림 종류는 세 가지 중 하나"]}, "l": {"rows": [{"c": "id", "cells": ["알림 번호", "번호", "식별자"], "pk": true, "note": ""}, {"c": "type", "cells": ["알림 종류", "유형", "필수"], "pk": false, "note": ""}, {"c": "message", "cells": ["내용", "짧은 글", "필수"], "pk": false, "note": ""}, {"c": "created_at", "cells": ["만든 시각", "시각", "필수"], "pk": false, "note": ""}, {"c": "read_at", "cells": ["읽은 시각", "시각", "선택"], "pk": false, "note": ""}], "notes": ["점수와 평가 의견은 담지 않음"]}}}, "rels": [{"p": "member", "c": "assignment", "col": "professor_id", "verb": "만듦", "text": "교수 회원이 과제를 만듦", "nullable": false, "onePlus": false, "dashed": false, "lg": true}, {"p": "assignment", "c": "team", "col": "assignment_id", "verb": "포함", "text": "과제에는 조가 하나 이상 있음", "nullable": false, "onePlus": true, "dashed": false, "lg": true}, {"p": "team", "c": "team_member", "col": "team_id", "verb": "소속", "text": "조에는 조장을 포함해 조원이 한 명 이상 있음", "nullable": false, "onePlus": true, "dashed": false, "lg": true}, {"p": "assignment", "c": "team_member", "col": "assignment_id", "verb": "복사 컬럼", "text": "조의 과제 번호를 복사한 값으로, 같은 과제의 다른 조 참여를 막는 데 씀", "nullable": false, "onePlus": true, "dashed": false, "lg": false}, {"p": "member", "c": "team_member", "col": "member_id", "verb": "참여", "text": "회원이 여러 과제의 조에 참여함", "nullable": false, "onePlus": false, "dashed": false, "lg": true}, {"p": "team_member", "c": "role_history", "col": "team_member_id", "verb": "이전 역할", "text": "역할을 바꾸면 이전 역할이 쌓임", "nullable": false, "onePlus": false, "dashed": false, "lg": true}, {"p": "team", "c": "leader_history", "col": "team_id", "verb": "교체됨", "text": "조장을 바꿀 때마다 쌓임", "nullable": false, "onePlus": false, "dashed": false, "lg": true}, {"p": "team_member", "c": "leader_history", "col": "previous_leader_id", "verb": "이전 조장", "text": "이전 조장인 조원을 가리킴", "nullable": false, "onePlus": false, "dashed": false, "lg": true}, {"p": "team_member", "c": "leader_history", "col": "new_leader_id", "verb": "새 조장", "text": "새 조장인 조원을 가리킴", "nullable": false, "onePlus": false, "dashed": false, "lg": true}, {"p": "team_member", "c": "deliverable", "col": "team_member_id", "verb": "올림", "text": "조원이 산출물을 올림", "nullable": false, "onePlus": false, "dashed": false, "lg": true}, {"p": "team", "c": "contribution", "col": "team_id", "verb": "기록함", "text": "조에 기여 항목을 등록함", "nullable": false, "onePlus": false, "dashed": false, "lg": true}, {"p": "team_member", "c": "contribution", "col": "assignee_id", "verb": "담당함", "text": "기여 항목마다 담당 조원이 있음", "nullable": false, "onePlus": false, "dashed": false, "lg": true}, {"p": "team_member", "c": "confirmation", "col": "confirmer_id", "verb": "확인함", "text": "조원이 다른 조원의 기록을 확인함", "nullable": false, "onePlus": false, "dashed": false, "lg": true}, {"p": "deliverable", "c": "confirmation", "col": "deliverable_id", "verb": "확인 대상", "text": "완료확인 대상이 산출물인 경우", "nullable": true, "onePlus": false, "dashed": true, "lg": true}, {"p": "contribution", "c": "confirmation", "col": "contribution_id", "verb": "확인 대상", "text": "완료확인 대상이 기여 항목인 경우", "nullable": true, "onePlus": false, "dashed": true, "lg": true}, {"p": "team_member", "c": "evaluation", "col": "evaluator_id", "verb": "평가함", "text": "조원이 다른 조원을 평가함", "nullable": false, "onePlus": false, "dashed": false, "lg": true}, {"p": "team_member", "c": "evaluation", "col": "target_id", "verb": "평가받음", "text": "조원이 다른 조원에게 평가받음", "nullable": false, "onePlus": false, "dashed": false, "lg": true}, {"p": "team_member", "c": "evaluation_draft", "col": "evaluator_id", "verb": "저장함", "text": "조원이 제출 전 평가를 저장함", "nullable": false, "onePlus": false, "dashed": false, "lg": true}, {"p": "team_member", "c": "evaluation_draft", "col": "target_id", "verb": "대상", "text": "임시 저장의 평가 대상", "nullable": false, "onePlus": false, "dashed": false, "lg": true}, {"p": "member", "c": "notification", "col": "recipient_id", "verb": "받음", "text": "회원이 알림을 받음", "nullable": false, "onePlus": false, "dashed": false, "lg": true}, {"p": "team", "c": "notification", "col": "team_id", "verb": "관련", "text": "알림이 생긴 조", "nullable": false, "onePlus": false, "dashed": false, "lg": true}]};
+const T = D.tables;
+const NS = 'http://www.w3.org/2000/svg';
+const C = { core: '#1E2A3A', later: '#D6DEE8', ink: '#111827', muted: '#374151', note: '#4B5563', key: '#1E3A8A', alt: '#F5F7FA', foot: '#EEF1F5', white: '#FFFFFF', head: '#FFFFFF' };
+// 선 색: 가리키는 테이블별. 밝기도 서로 다르게 고름
+const EDGE = { member: '#1D4ED8', assignment: '#C2410C', team: '#047857', team_member: '#111827', deliverable: '#A21CAF', contribution: '#A16207' };
+const M = { padx: 14, gap: 18, titleH: 44, rowH: 30, noteH: 19, footLine: 21, footPad: 8, indent: 18, portGap: 12 };
+const FS = { title: 20, sub: 14, cells: [16, 14.5, 14.5, 14.5], note: 13.5, foot: 14, label: 15 };
+const LV_NAME = n => n === 0 ? '최상위' : (n === D.levels.length - 1 ? '최하위' : '');
+
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function txt(parent, x, y, s, size, opts = {}) {
+  const t = el('text', { x, y, 'font-size': size, 'font-weight': opts.bold ? 700 : (opts.w || 400), 'dominant-baseline': 'central' }, parent);
+  if (opts.fill) t.setAttribute('fill', opts.fill);
+  if (opts.mono) t.setAttribute('class', 'mono');
+  t.textContent = s; return t;
+}
+const meas = el('svg', { class: 'erd', width: 0, height: 0, style: 'position:absolute;visibility:hidden' }); document.body.appendChild(meas);
+const cache = {};
+function tw(s, size, bold, mono) { const k = s + '|' + size + '|' + (bold ? 1 : 0) + (mono ? 'm' : ''); if (cache[k] == null) { const t = txt(meas, 0, 0, s, size, { bold, mono }); cache[k] = t.getComputedTextLength(); t.remove(); } return cache[k]; }
+
+function measure(k, v, need = {}) {
+  const t = T[k], spec = t[v], n = spec.rows[0].cells.length, phys = v === 'p';
+  const monoCol = i => phys && (i === 0 || i === 1);
+  const colW = Array(n).fill(0);
+  for (const r of spec.rows) r.cells.forEach((c, i) => { colW[i] = Math.max(colW[i], tw(c, FS.cells[i], i === 0 ? r.pk : i === 3, monoCol(i))); });
+  let w = M.padx * 2 + colW.reduce((a, b) => a + b, 0) + M.gap * (n - 1);
+  const title = phys ? k : t.name, sub = phys ? t.name : k;
+  w = Math.max(w, M.padx * 2 + tw(title, FS.title, true, phys) + 12 + tw(sub, FS.sub, false, !phys));
+  for (const r of spec.rows) if (r.note) w = Math.max(w, M.padx + M.indent + tw(r.note, FS.note) + M.padx);
+  for (const s of spec.notes) w = Math.max(w, M.padx * 2 + tw(s, FS.foot));
+  w = Math.ceil(w);
+  const headH = Math.max(M.titleH, need.__head || 0);
+  let y = headH; const rows = {};
+  spec.rows.forEach(r => { const h = Math.max(M.rowH + (r.note ? M.noteH : 0), need[r.c] || 0); rows[r.c] = { top: y, h }; y += h; });
+  const bodyH = y;
+  if (spec.notes.length) y += M.footPad * 2 + spec.notes.length * M.footLine;
+  return { w, h: Math.ceil(y + 1), colW, rows, bodyH, headH, title, sub, n, phys };
+}
+
+function edgesFor(v) { return D.rels.filter(r => v === 'p' || r.lg); }
+const ELK_OPTS = {
+  'elk.algorithm': 'layered', 'elk.direction': 'DOWN', 'elk.edgeRouting': 'ORTHOGONAL',
+  'elk.layered.layering.strategy': 'LONGEST_PATH_SOURCE',
+  'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
+  'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+  'elk.layered.thoroughness': '30',
+  'elk.layered.crossingMinimization.greedySwitch.type': 'TWO_SIDED',
+  'elk.spacing.nodeNode': '80', 'elk.layered.spacing.nodeNodeBetweenLayers': '130',
+  'elk.spacing.edgeEdge': '18', 'elk.layered.spacing.edgeEdgeBetweenLayers': '18',
+  'elk.spacing.edgeNode': '30', 'elk.layered.spacing.edgeNodeBetweenLayers': '30',
+  'elk.edgeLabels.placement': 'CENTER', 'elk.spacing.edgeLabel': '4',
+};
+const ORDER = D.levels.flatMap(L => L.tables);
+
+async function layout(v) {
+  const elk = new ELK();
+  const S0 = {}; ORDER.forEach(k => S0[k] = measure(k, v));
+  const rels = edgesFor(v);
+  const g1 = await elk.layout({ id: 'root', layoutOptions: ELK_OPTS,
+    children: ORDER.map(k => ({ id: k, width: S0[k].w, height: S0[k].h })),
+    edges: rels.map((r, i) => ({ id: 'e' + i, sources: [r.p], targets: [r.c] })) });
+  const pos = {}; g1.children.forEach(n => pos[n.id] = n);
+  const plan = rels.map(r => {
+    const P = pos[r.p], Q = pos[r.c];
+    const pc = P.x + P.width / 2, qc = Q.x + Q.width / 2;
+    const overlap = Math.min(P.x + P.width, Q.x + Q.width) - Math.max(P.x, Q.x);
+    let ps, qs;
+    if (overlap > Math.min(P.width, Q.width) * 0.35) ps = qs = qc < pc ? 'WEST' : 'EAST';
+    else { ps = qc < pc ? 'WEST' : 'EAST'; qs = pc < qc ? 'WEST' : 'EAST'; }
+    return { r, ps, qs, pRow: 'id', qRow: v === 'p' ? r.col : '__head' };
+  });
+  const groups = {};
+  const key = (k, row, side) => `${k}|${row}|${side}`;
+  plan.forEach((p, i) => { (groups[key(p.r.p, p.pRow, p.ps)] ||= []).push({ i, end: 's', other: pos[p.r.c] }); (groups[key(p.r.c, p.qRow, p.qs)] ||= []).push({ i, end: 't', other: pos[p.r.p] }); });
+  const need = {}; ORDER.forEach(k => need[k] = {});
+  for (const g in groups) { const [k, row] = g.split('|'); need[k][row] = Math.max(need[k][row] || 0, groups[g].length * M.portGap + 10); }
+  const S = {}; ORDER.forEach(k => S[k] = measure(k, v, need[k]));
+  const ports = {}; ORDER.forEach(k => ports[k] = []);
+  const ends = plan.map(() => ({}));
+  for (const g in groups) {
+    const [k, row, side] = g.split('|');
+    const list = groups[g].sort((a, b) => (a.other.y - b.other.y) || (a.other.x - b.other.x));
+    const top = row === '__head' ? 0 : S[k].rows[row].top, h = row === '__head' ? S[k].headH : S[k].rows[row].h;
+    const n = list.length, start = top + h / 2 - (n - 1) * M.portGap / 2;
+    list.forEach((it, j) => { const id = `${g}|${j}`; ports[k].push({ id, x: side === 'WEST' ? 0 : S[k].w, y: start + j * M.portGap, width: 1, height: 1, layoutOptions: { 'elk.port.side': side } }); ends[it.i][it.end] = id; });
+  }
+  const edges = plan.map((p, i) => {
+    const e = { id: 'e' + i, sources: [ends[i].s], targets: [ends[i].t] };
+    if (v === 'l') e.labels = [{ text: p.r.verb, width: tw(p.r.verb, FS.label, true) + 14, height: 24 }];
+    return e;
+  });
+  const g2 = await elk.layout({ id: 'root', layoutOptions: ELK_OPTS,
+    children: ORDER.map(k => ({ id: k, width: S[k].w, height: S[k].h, ports: ports[k], layoutOptions: { 'elk.portConstraints': 'FIXED_POS' } })),
+    edges });
+  return { S, g: g2, rels };
+}
+
+function marker(parent, pt, toward, kind, color) {
+  const a = Math.atan2(toward.y - pt.y, toward.x - pt.x) * 180 / Math.PI;
+  const g = el('g', { transform: `translate(${pt.x} ${pt.y}) rotate(${a})` }, parent);
+  const tick = x => el('line', { class: 'mk', x1: x, y1: -7, x2: x, y2: 7, stroke: color }, g);
+  const dot = x => el('circle', { class: 'mk dot', cx: x, cy: 0, r: 4.8, stroke: color }, g);
+  const crow = () => { el('line', { class: 'mk', x1: 0, y1: -7, x2: 12, y2: 0, stroke: color }, g); el('line', { class: 'mk', x1: 0, y1: 7, x2: 12, y2: 0, stroke: color }, g); };
+  if (kind === 'one') { tick(7); tick(12); }
+  else if (kind === 'zeroOne') { tick(7); dot(17); }
+  else if (kind === 'oneMany') { crow(); tick(17); }
+  else { crow(); dot(18.5); }
+}
+
+function draw(v, L) {
+  const { S, g, rels } = L;
+  const PAD = 36, TOP = 56;
+  const svg = el('svg', { class: 'erd', id: 'erd-' + v });
+  const root = el('g', { transform: `translate(${PAD} ${PAD + TOP})` }, svg);
+  const band = el('g', { class: 'band' }, root);
+  const pos = {}; g.children.forEach(n => pos[n.id] = n);
+  const minX = Math.min(...g.children.map(n => n.x)) - 28, maxX = Math.max(...g.children.map(n => n.x + n.width)) + 28;
+  D.levels.forEach(Lv => {
+    const ns = Lv.tables.map(k => pos[k]);
+    const top = Math.min(...ns.map(n => n.y)) - 56, bot = Math.max(...ns.map(n => n.y + n.height)) + 16;
+    el('rect', { x: minX, y: top, width: maxX - minX, height: bot - top, rx: 6 }, band);
+    const label = Lv.n + '단계' + (LV_NAME(Lv.n) ? '  ' + LV_NAME(Lv.n) : '');
+    txt(band, minX + 14, top + 24, label, 22, { bold: true });
+    const s = txt(band, minX + 14 + tw(label, 22, true) + 18, top + 25, Lv.n === 0 ? '외래 키 없음' : '가리키는 테이블 중 가장 깊은 단계 + 1', 16);
+    s.setAttribute('class', 'sub');
+  });
+  const edgeG = el('g', {}, root);
+  const edges = [];
+  g.edges.forEach((e, i) => {
+    const r = rels[i], sec = e.sections[0], color = EDGE[r.p] || C.ink;
+    const pts = [sec.startPoint, ...(sec.bendPoints || []), sec.endPoint];
+    const eg = el('g', { class: 'edge', style: `color:${color}` }, edgeG);
+    el('path', { class: 'ln', d: 'M' + pts.map(p => `${p.x} ${p.y}`).join(' L'), stroke: color, 'stroke-dasharray': r.dashed ? '8 6' : 'none' }, eg);
+    marker(eg, pts[0], pts[1], r.nullable ? 'zeroOne' : 'one', color);
+    marker(eg, pts[pts.length - 1], pts[pts.length - 2], r.onePlus ? 'oneMany' : 'zeroMany', color);
+    if (e.labels && e.labels[0]) {
+      const lb = e.labels[0], lg = el('g', { class: 'lab' }, eg);
+      el('rect', { x: lb.x, y: lb.y, width: lb.width, height: lb.height, rx: 3 }, lg);
+      txt(lg, lb.x + 7, lb.y + lb.height / 2, r.verb, FS.label, { fill: color, bold: true });
+    }
+    edges.push({ g: eg, p: r.p, c: r.c, col: r.col });
+  });
+  const nodes = {};
+  ORDER.forEach(k => {
+    const n = pos[k], s = S[k], t = T[k], spec = t[v];
+    const ng = el('g', { class: 'node', transform: `translate(${n.x} ${n.y})` }, root); ng.dataset.k = k;
+    el('rect', { x: 0, y: 0, width: s.w, height: s.h, fill: C.white }, ng);
+    el('rect', { x: 0, y: 0, width: s.w, height: s.headH, fill: C.core }, ng);
+    const hc = C.head;
+    txt(ng, M.padx, s.headH / 2, s.title, FS.title, { bold: true, fill: hc, mono: s.phys });
+    txt(ng, M.padx + tw(s.title, FS.title, true, s.phys) + 12, s.headH / 2 + 1, s.sub, FS.sub, { fill: hc, mono: !s.phys });
+    const xs = [M.padx]; for (let i = 1; i < s.n; i++) xs.push(xs[i - 1] + s.colW[i - 1] + M.gap);
+    const rowEls = {};
+    spec.rows.forEach((r, ri) => {
+      const R = s.rows[r.c], base = M.rowH + (r.note ? M.noteH : 0), off = R.top + (R.h - base) / 2;
+      const rg = el('g', { class: 'row' }, ng); rowEls[r.c] = rg;
+      el('rect', { x: 2, y: R.top, width: s.w - 4, height: R.h, fill: ri % 2 ? C.alt : C.white }, rg);
+      if (ri > 0) el('line', { x1: 2, y1: R.top, x2: s.w - 2, y2: R.top, stroke: '#E5E7EB', 'stroke-width': 1 }, rg);
+      r.cells.forEach((c, i) => { if (c) txt(rg, xs[i], off + M.rowH / 2, c, FS.cells[i], { bold: i === 0 ? r.pk : i === 3, fill: i === 0 ? C.ink : (i === 3 ? C.key : C.muted), mono: s.phys && (i === 0 || i === 1) }); });
+      if (r.note) txt(rg, M.padx + M.indent, off + M.rowH + M.noteH / 2 - 4, r.note, FS.note, { fill: C.note });
+    });
+    if (spec.notes.length) {
+      el('rect', { x: 2, y: s.bodyH, width: s.w - 4, height: s.h - s.bodyH - 2, fill: C.foot }, ng);
+      spec.notes.forEach((x, i) => txt(ng, M.padx, s.bodyH + M.footPad + M.footLine * i + M.footLine / 2, x, FS.foot, { fill: C.ink }));
+    }
+    el('rect', { class: 'frame', x: 0, y: 0, width: s.w, height: s.h, fill: 'none', stroke: C.core, 'stroke-width': 2 }, ng);
+    nodes[k] = ng; ng.rowEls = rowEls;
+  });
+  const W = g.width + PAD * 2, H = g.height + PAD * 2 + TOP;
+  svg.setAttribute('width', W); svg.setAttribute('height', H); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  return { svg, nodes, edges, w: W, h: H };
+}
+
+// 범례
+document.getElementById('colors').innerHTML = Object.entries(EDGE).map(([k, c]) => `<i style="background:${c}"></i><span><code>${k}.id</code> ${T[k].name}</span>`).join('');
+(() => {
+  const box = document.getElementById('ends');
+  [['one', '반드시 하나'], ['zeroOne', '없거나 하나'], ['oneMany', '하나 이상'], ['zeroMany', '없거나 여러 개']].forEach(([k, label]) => {
+    const s = el('svg', { width: 46, height: 20, viewBox: '0 0 46 20', class: 'erd' });
+    el('line', { class: 'ln', x1: 2, y1: 10, x2: 44, y2: 10, stroke: C.ink, 'stroke-width': 2.2 }, s);
+    marker(s, { x: 2, y: 10 }, { x: 44, y: 10 }, k, C.ink);
+    s.querySelectorAll('.mk').forEach(m => m.setAttribute('stroke-width', 2.2));
+    s.querySelectorAll('.dot').forEach(m => m.setAttribute('fill', '#fff'));
+    const sp = document.createElement('span'); sp.textContent = label;
+    box.append(s, sp);
+  });
+})();
+
+// 연쇄
+const G = { p: { parents: {}, children: {} }, l: { parents: {}, children: {} } };
+for (const v of ['p', 'l']) { for (const k in T) { G[v].parents[k] = []; G[v].children[k] = []; } for (const r of D.rels) { if (v === 'l' && !r.lg) continue; G[v].parents[r.c].push(r); G[v].children[r.p].push(r); } }
+let parents = G.p.parents, children = G.p.children;
+function closure(k, dir) { const out = new Set(), st = [k]; while (st.length) { const x = st.pop(); for (const r of (dir === 'up' ? parents[x] : children[x])) { const y = dir === 'up' ? r.p : r.c; if (!out.has(y)) { out.add(y); st.push(y); } } } return out; }
+function pathsToTop(k) { if (!parents[k].length) return [[k]]; const res = [], seen = new Set(); for (const r of parents[k]) for (const p of pathsToTop(r.p)) { const s = p.concat(k).join(' > '); if (!seen.has(s)) { seen.add(s); res.push(p.concat(k)); } } return res; }
+
+const canvas = document.getElementById('canvas'), stage = document.getElementById('stage'), drawer = document.getElementById('drawer');
+const views = {};
+let view = 'p', S = { x: 0, y: 0, s: 1 }, sel = null;
+function apply() { stage.style.transform = `translate(${S.x}px, ${S.y}px) scale(${S.s})`; }
+function fit() { const V = views[view]; if (!V) return; const r = canvas.getBoundingClientRect(); const s = Math.min((r.width - 32) / V.w, (r.height - 32) / V.h); S = { s, x: (r.width - V.w * s) / 2, y: 16 }; apply(); }
+function zoomAt(f, cx, cy) { const ns = Math.min(4, Math.max(0.06, S.s * f)); S.x = cx - (cx - S.x) * (ns / S.s); S.y = cy - (cy - S.y) * (ns / S.s); S.s = ns; apply(); }
+function center(k) {
+  const V = views[view]; if (!V) return; const g = V.nodes[k];
+  const m = g.transform.baseVal.consolidate().matrix, rt = g.parentNode.transform.baseVal.consolidate().matrix, b = g.getBBox();
+  const r = canvas.getBoundingClientRect();
+  // 설명 창이 가리지 않는 영역에 테이블이 꽉 차게 맞춤
+  const narrow = window.matchMedia('(max-width: 860px)').matches;
+  const dw = drawer.hidden || narrow ? 0 : Math.min(480, r.width - 28) + 28;
+  const fw = Math.max(r.width - dw, r.width * 0.4), fh = drawer.hidden || !narrow ? r.height : r.height * 0.38;
+  const s = Math.min((fw - 64) / b.width, (fh - 64) / b.height, 1.8);
+  const cx = rt.e + m.e + b.x + b.width / 2, cy = rt.f + m.f + b.y + b.height / 2;
+  S = { s, x: fw / 2 - cx * s, y: fh / 2 - cy * s };
+  stage.classList.add('anim'); apply(); clearTimeout(center.t); center.t = setTimeout(() => stage.classList.remove('anim'), 420);
+}
+canvas.addEventListener('wheel', e => { if (e.target.closest('.drawer')) return; e.preventDefault(); const r = canvas.getBoundingClientRect(); zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+let drag = null;
+canvas.addEventListener('pointerdown', e => { if (e.target.closest('.drawer')) return; drag = { x: e.clientX, y: e.clientY, sx: S.x, sy: S.y, moved: false }; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove', e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 4) { drag.moved = true; canvas.classList.add('dragging'); } if (drag.moved) { S.x = drag.sx + dx; S.y = drag.sy + dy; apply(); } });
+canvas.addEventListener('pointerup', e => { const d = drag; drag = null; canvas.classList.remove('dragging'); if (!d || d.moved) return; const t = document.elementFromPoint(e.clientX, e.clientY); const g = t && t.closest('g.node'); const k = g ? g.dataset.k : null; select(k); if (k) center(k); });
+const step = f => { const r = canvas.getBoundingClientRect(); zoomAt(f, r.width / 2, r.height / 2); };
+document.getElementById('zin').onclick = () => step(1.25);
+document.getElementById('zout').onclick = () => step(0.8);
+document.getElementById('z100').onclick = () => { const r = canvas.getBoundingClientRect(); zoomAt(1 / S.s, r.width / 2, r.height / 2); };
+document.getElementById('zfit').onclick = fit;
+const panelBtn = document.getElementById('panelBtn');
+panelBtn.onclick = () => { const m = document.querySelector('.main'); const wide = m.classList.toggle('wide'); panelBtn.textContent = wide ? '패널 보이기' : '패널 숨기기'; panelBtn.setAttribute('aria-pressed', wide); requestAnimationFrame(fit); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape') select(null); else if (e.target.closest('input, textarea')) return; else if (e.key === '+' || e.key === '=') step(1.25); else if (e.key === '-') step(0.8); else if (e.key === '0') fit(); });
+
+const lvBox = document.getElementById('levels');
+D.levels.forEach(L => {
+  const row = document.createElement('div'); row.className = 'lv';
+  row.innerHTML = `<div class="n">${L.n}단계<small>${LV_NAME(L.n)}</small></div><div class="chips"></div>`;
+  L.tables.forEach(k => { const b = document.createElement('button'); b.className = 'chip'; b.textContent = k; b.dataset.k = k; b.title = T[k].name; b.onclick = () => { select(k); center(k); }; row.querySelector('.chips').append(b); });
+  lvBox.append(row);
+});
+
+// 대응 관계를 문장으로
+const eul = w => { const c = w.charCodeAt(w.length - 1); return (c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28) ? w + '을' : w + '를'; };
+function cardText(r) {
+  const P = T[r.p].name, Q = T[r.c].name;
+  const many = r.onePlus ? '한 개 이상' : '여러 개(없을 수도 있음)';
+  const one = r.nullable ? `없거나 하나` : '반드시 하나';
+  return `${P} 하나에 ${Q} ${many}. ${Q} 하나는 ${eul(P)} ${one} 가리킴`;
+}
+function relCard(r, dir) {
+  const other = dir === 'up' ? r.p : r.c, t = T[other];
+  const keyLine = view === 'p' ? `${r.c}.${r.col} → ${r.p}.id` : `${T[r.p].name}의 식별자 → ${T[r.c].name}`;
+  return `<div class="rel" style="--c:${EDGE[r.p]}">
+    <button class="to" data-k="${other}">${t.name}<code>${other}</code></button>
+    <span class="key">${keyLine}</span>
+    <span class="card">${cardText(r)}</span>
+    <span class="what">연결 뜻: ${r.text}</span>
+    <span class="what">${t.name}: ${t.desc}</span>
+  </div>`;
+}
+function render() {
+  const up = sel ? closure(sel, 'up') : new Set(), down = sel ? closure(sel, 'down') : new Set();
+  const direct = new Set(sel ? [...parents[sel].map(r => r.p), ...children[sel].map(r => r.c)] : []);
+  for (const v in views) {
+    const V = views[v]; V.svg.classList.toggle('focus', !!sel);
+    for (const k in V.nodes) { const g = V.nodes[k]; g.classList.toggle('sel', k === sel); g.classList.toggle('on', !!sel && (k === sel || up.has(k) || down.has(k))); Object.values(g.rowEls).forEach(r => r.classList.remove('hit')); }
+    V.edges.forEach(e => {
+      const isUp = !!sel && (e.c === sel || up.has(e.c)) && up.has(e.p);
+      const isDown = !!sel && (e.p === sel || down.has(e.p)) && down.has(e.c);
+      e.g.classList.toggle('on', isUp || isDown);
+      if (sel && (e.p === sel || e.c === sel) && v === 'p') { const cr = V.nodes[e.c].rowEls[e.col]; if (cr) cr.classList.add('hit'); const pr = V.nodes[e.p].rowEls['id']; if (pr) pr.classList.add('hit'); }
+    });
+  }
+  document.querySelectorAll('.chip').forEach(c => { const k = c.dataset.k; c.classList.toggle('on', k === sel); c.classList.toggle('rel', direct.has(k)); });
+  if (!sel) { drawer.hidden = true; drawer.innerHTML = ''; return; }
+  const t = T[sel], ps = parents[sel], cs = children[sel];
+  drawer.hidden = false;
+  drawer.innerHTML = `
+    <div class="top"><div>
+      <span class="lvtag">${t.level}단계${LV_NAME(t.level) ? ' ' + LV_NAME(t.level) : ''}</span>
+      <h3>${t.name}<code>${sel}</code></h3></div>
+      <button class="close" id="closeBtn">닫기</button></div>
+    <p class="purpose">${t.purpose}</p>
+    <dl class="facts"><dt>행 하나</dt><dd>${t.row}</dd><dt>컬럼</dt><dd>${t.cols}개</dd><dt>연쇄</dt><dd>위로 ${up.size}개, 아래로 ${down.size}개</dd></dl>
+    <section class="rels"><h4>이 테이블이 가리키는 테이블<small>${ps.length}개</small></h4>${ps.length ? ps.map(r => relCard(r, 'up')).join('') : '<p class="none">없음. 최상위 테이블이라 다른 테이블을 가리키지 않음</p>'}</section>
+    <section class="rels"><h4>이 테이블을 가리키는 테이블<small>${cs.length}개</small></h4>${cs.length ? cs.map(r => relCard(r, 'down')).join('') : '<p class="none">없음. 최하위 테이블이라 이 테이블을 가리키는 곳이 없음</p>'}</section>
+    <section class="rels"><h4>최상위까지 가는 길</h4><div class="paths">${pathsToTop(sel).map(p => `<span>${p.join(' > ')}</span>`).join('')}</div></section>
+    ${cs.length ? `<p class="warn">외래 키에 삭제 동작을 지정하지 않았으므로, 위 ${cs.length}개 연결 중 하나라도 이 행을 가리키면 이 행은 지울 수 없음. 연쇄 삭제는 일어나지 않음</p>` : ''}`;
+  drawer.querySelector('#closeBtn').onclick = () => select(null);
+  drawer.querySelectorAll('button.to').forEach(b => b.onclick = () => { select(b.dataset.k); center(b.dataset.k); });
+  drawer.scrollTop = 0;
+}
+function select(k) { sel = k; render(); }
+function setView(v) {
+  view = v; parents = G[v].parents; children = G[v].children;
+  for (const x in views) views[x].svg.style.display = x === v ? 'block' : 'none';
+  document.getElementById('vp').setAttribute('aria-pressed', v === 'p'); document.getElementById('vl').setAttribute('aria-pressed', v === 'l');
+  document.getElementById('meta').textContent = v === 'p' ? '테이블 12개, 외래 키 21개, 참조 깊이 6단계' : '엔티티 12개, 관계 20개, 참조 깊이 6단계';
+  render(); fit();
+}
+document.getElementById('vp').onclick = () => setView('p');
+document.getElementById('vl').onclick = () => setView('l');
+
+(async () => {
+  const status = document.getElementById('status');
+  try {
+    if (typeof ELK === 'undefined') throw new Error('배치 라이브러리를 불러오지 못함');
+    if (document.fonts && document.fonts.ready) await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 2500))]);
+    for (const v of ['p', 'l']) { const L = await layout(v); const V = draw(v, L); stage.appendChild(V.svg); views[v] = V; }
+    status.remove(); setView('p');
+    window.addEventListener('resize', () => requestAnimationFrame(fit));
+  } catch (err) { status.textContent = '배치를 계산하지 못함: ' + err.message + '. 새로 고침해 보세요'; }
+})();
+</script>
