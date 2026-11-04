@@ -1,0 +1,7 @@
+{
+  "assignments": [
+    { "id": 1, "title": "캡스톤 주제 발표", "description": "주제와 범위를 5분 안에 발표", "startDate": "2026-10-05", "endDate": "2026-10-12" },
+    { "id": 2, "title": "요구사항 명세서", "description": "기능 목록과 화면 흐름 정리", "startDate": "2026-10-12", "endDate": "2026-10-26" },
+    { "id": 3, "title": "중간 시연", "description": "과제 생성부터 동료평가 입력까지", "startDate": "2026-11-02", "endDate": "2026-12-11" }
+  ]
+}
