@@ -13,6 +13,8 @@
 | `erd_logical_1.png`, `erd_logical_2.png` | 논리 ERD 그림. 원고에 들어감 |
 | `erd_physical_1.png`, `erd_physical_2.png` | 물리 ERD 그림. 원고에 들어감 |
 | `schema.sql` | PostgreSQL에서 테이블을 만드는 SQL |
+| `업무데이터대응_v1.pdf` | 단위 업무와 데이터 대응. 업무마다 어떤 테이블을 만들고, 읽고, 바꾸는지 정리함 |
+| `업무데이터대응_원고_v1.md` | 위 PDF의 원고 |
 
 ## ERD 캔버스 보는 방법
 
