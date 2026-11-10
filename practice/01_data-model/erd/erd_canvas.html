@@ -102,6 +102,7 @@ aside.panel { background: var(--surface); border-right: 1px solid var(--line); o
 .drawer .top { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
 .drawer .lvtag { display: inline-block; font: 700 14px var(--sans); color: #FFFFFF; background: var(--core); padding: 2px 10px; border-radius: 4px; }
 .drawer .lvtag.later { background: #6B7280; }
+.drawer .who { display: inline-block; font: 700 14px var(--sans); color: var(--ink); background: var(--hit); border: 1px solid #B45309; padding: 1px 10px; border-radius: 4px; margin-left: 6px; }
 .drawer .lvtag.plan { background: var(--accent); margin-left: 6px; }
 .drawer h3 { font-size: 30px; font-weight: 900; color: var(--ink); line-height: 1.25; margin-top: 8px; }
 .drawer h3 code { display: block; font: 500 18px var(--mono); color: var(--muted); }
@@ -159,6 +160,10 @@ aside.panel { background: var(--surface); border-right: 1px solid var(--line); o
   </header>
   <div class="main">
     <aside class="panel">
+      <section>
+        <h2>담당</h2>
+        <div class="levels" id="owners"></div>
+      </section>
       <section>
         <h2>참조 깊이 단계</h2>
         <div class="levels" id="levels"></div>
@@ -6899,6 +6904,9 @@ const M = { padx: 14, gap: 18, titleH: 44, rowH: 30, noteH: 19, footLine: 21, fo
 const FS = { title: 20, sub: 14, cells: [16, 14.5, 14.5, 14.5], note: 13.5, foot: 14, label: 15 };
 const LV_NAME = n => n === 0 ? '최상위' : (n === D.levels.length - 1 ? '최하위' : '');
 const ALL = D.levels.flatMap(L => L.tables);
+// 테이블 담당. 왼쪽 패널, 테이블 설명, 발표 순서에 이름을 보여 줌
+const OWNERS = [['이종민', ['assignment', 'team']], ['양원야', ['member', 'notification']], ['장호진', ['deliverable', 'contribution', 'confirmation']], ['윤장현', ['team_member', 'role_history', 'leader_history']], ['김효민', ['evaluation', 'evaluation_draft']]];
+const OWNER = {}; OWNERS.forEach(([name, ks]) => ks.forEach(k => { OWNER[k] = name; }));
 
 function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
 function txt(parent, x, y, s, size, opts = {}) {
@@ -7138,6 +7146,13 @@ D.levels.forEach(L => {
   L.tables.forEach(k => { const b = document.createElement('button'); b.className = 'chip'; b.dataset.k = k; b.title = T[k].name; b.onclick = () => pick(k); row.querySelector('.chips').append(b); });
   lvBox.append(row);
 });
+const ownBox = document.getElementById('owners');
+OWNERS.forEach(([name, ks]) => {
+  const row = document.createElement('div'); row.className = 'lv';
+  row.innerHTML = `<div class="n">${name}</div><div class="chips"></div>`;
+  ks.forEach(k => { const b = document.createElement('button'); b.className = 'chip'; b.dataset.k = k; b.title = T[k].name; b.onclick = () => pick(k); row.querySelector('.chips').append(b); });
+  ownBox.append(row);
+});
 function chipLabels() { document.querySelectorAll('.chip').forEach(c => { c.textContent = view === 'p' ? c.dataset.k : T[c.dataset.k].name; c.style.fontFamily = view === 'p' ? '' : 'var(--sans)'; }); }
 
 // 대응 관계를 문장으로
@@ -7183,7 +7198,7 @@ function render() {
   drawer.hidden = false;
   drawer.innerHTML = `
     <div class="top"><div>
-      <span class="lvtag">${t.level}단계${LV_NAME(t.level) ? ' ' + LV_NAME(t.level) : ''}</span>
+      <span class="lvtag">${t.level}단계${LV_NAME(t.level) ? ' ' + LV_NAME(t.level) : ''}</span><span class="who">담당 ${OWNER[sel]}</span>
       <h3>${t.name}${phys ? `<code>${sel}</code>` : ''}</h3></div>
       <button class="close" id="closeBtn">닫기</button></div>
     <p class="purpose">${t.purpose}</p>
@@ -7213,63 +7228,64 @@ document.getElementById('vl').onclick = () => setView('l');
 
 // 발표 순서. keys가 ALL이면 전체 그림, 아니면 그 테이블만 따로 배치한 작은 그림을 크게 보여 줌
 const STEPS = [
-  { title: '전체 구조', view: 'p', keys: ALL, lines: [
-    '테이블 12개, 외래 키 21개. 위에서 아래로 참조 깊이 6단계',
-    '외래 키가 없는 <code>member</code>가 최상위, 산출물이나 기여 항목을 확인한 기록인 <code>confirmation</code>이 최하위',
-    '선은 외래 키 컬럼에서 나와 가리키는 테이블의 <code>id</code>로 들어감. 선 색은 가리키는 테이블을 나타냄'] },
-  { title: '논리 모델: 조 구성', view: 'l', dir: 'RIGHT', keys: ['member', 'assignment', 'team', 'team_member'], lines: [
-    '논리 모델은 엔티티, 속성, 관계만 정함. 데이터베이스 제품과 상관없음',
-    '교수 회원이 과제를 만들고, 과제에는 조가 하나 이상, 조에는 조원이 한 명 이상 있음',
-    '회원과 조의 다대다 관계는 조 참여 엔티티로 풀었음',
-    '하나 이상은 외래 키로 강제할 수 없어서, 과제를 등록할 때 조와 조장을 함께 저장해 보장함'] },
-  { title: '논리 모델에서 물리 모델로', view: 'p', dir: 'RIGHT', keys: ['member', 'assignment', 'team'],
+  { title: '전체 구조', who: '이종민', view: 'p', keys: ALL, lines: [
+    '테이블은 12개, 테이블을 잇는 외래 키는 21개. 위에서 아래로 6단계',
+    '위에 있는 테이블일수록 다른 테이블을 가리키지 않음. 맨 위는 <code>member</code>',
+    '맨 아래는 <code>confirmation</code>. 산출물이나 기여 항목을 확인한 기록',
+    '선은 외래 키 컬럼에서 나와, 가리키는 테이블의 <code>id</code>로 들어감. 선 색은 가리키는 테이블마다 다름'] },
+  { title: '논리 모델: 조 구성', who: '이종민', view: 'l', dir: 'RIGHT', keys: ['member', 'assignment', 'team', 'team_member'], lines: [
+    '논리 모델은 무엇을 저장할지만 정한 그림. 어떤 데이터베이스를 쓰는지와 상관없음',
+    '교수가 과제를 만듦. 과제에는 조가 있고, 조에는 조원이 있음',
+    '회원 한 명은 여러 조에 들어가고, 조 하나에는 여러 회원이 들어감. 이 관계를 조 참여로 풀었음',
+    '과제에 조가 하나 이상 있어야 한다는 규칙은 외래 키로 막을 수 없음. 과제를 만들 때 조와 조장을 함께 저장해서 지킴'] },
+  { title: '논리 모델에서 물리 모델로', who: '양원야', view: 'p', dir: 'RIGHT', keys: ['member', 'assignment', 'team'],
     rows: ['member.id', 'member.member_type', 'member.email', 'assignment.professor_id', 'assignment.phase', 'team.assignment_id'], lines: [
-    '엔티티 12개는 테이블 12개가 됨. 교수와 학생은 속성 차이가 없어 <code>member</code> 하나에 회원 유형 컬럼으로 구분함',
-    '식별자는 자동 번호 <code>id</code>(bigint) 대리 키로 통일함. 자연 키인 이메일은 다른 테이블에 복사되지 않도록 UNIQUE로만 둠',
-    '관계 20개는 외래 키 21개가 됨. 하나 늘어난 것은 일부러 복사한 <code>team_member.assignment_id</code>',
-    '도메인은 데이터 타입이 되고, 정해진 코드 값(회원 유형, 과제 단계, 알림 종류)은 CHECK로 막음'] },
-  { title: '정규화', view: 'p', keys: ['team', 'team_member', 'contribution', 'leader_history'],
+    '엔티티 12개가 테이블 12개가 됨. 교수와 학생은 저장하는 값이 같아서 <code>member</code> 하나에 넣고 회원 유형으로 구분함',
+    '모든 테이블의 기본 키는 자동으로 붙는 번호 <code>id</code>. 이메일은 겹치지 않게 UNIQUE만 걸었음',
+    '관계 20개가 외래 키 21개가 됨. 하나 늘어난 것은 일부러 복사한 <code>team_member.assignment_id</code>',
+    '정해진 값만 들어가는 컬럼(회원 유형, 과제 단계, 알림 종류)은 CHECK로 다른 값을 막음'] },
+  { title: '정규화', who: '장호진', view: 'p', keys: ['team', 'team_member', 'contribution', 'leader_history'],
     rows: ['team_member.assignment_id', 'contribution.team_id', 'leader_history.team_id'], lines: [
-    '제1정규형: 모든 값이 원자값. 점수 6개는 뜻이 다른 고정 항목이라 반복 그룹이 아님',
-    '제2정규형: 기본 키가 모두 단일 대리 키라 부분 종속이 없음',
-    '제3정규형이 목표. 노란 칸 3곳은 이행 종속을 일부러 남긴 중복 저장임',
-    '산출물의 역할명은 올릴 때의 역할을 남기는 이력 값이라 중복 저장이 아님'] },
-  { title: '설계 판단 1. 조 참여가 중심', view: 'p', keys: ['team_member', 'role_history', 'deliverable', 'contribution', 'evaluation'],
+    '제1정규형: 칸 하나에 값 하나만 넣음. 점수 6개는 뜻이 서로 다른 항목이라 컬럼 6개로 둠',
+    '제2정규형: 기본 키가 모두 <code>id</code> 하나라서, 키의 일부에만 딸린 컬럼이 없음',
+    '제3정규형: 다른 테이블에서 알 수 있는 값은 다시 저장하지 않음. 노란 칸 3곳만 이유가 있어 다시 저장함',
+    '산출물의 역할명은 올릴 때의 역할을 남긴 기록이라, 같은 값을 다시 저장한 것이 아님'] },
+  { title: '설계 판단 1. 조 참여가 중심', who: '윤장현', view: 'p', keys: ['team_member', 'role_history', 'deliverable', 'contribution', 'evaluation'],
     rows: ['team_member.id', 'role_history.team_member_id', 'deliverable.team_member_id', 'contribution.assignee_id', 'evaluation.evaluator_id', 'evaluation.target_id'], lines: [
     '산출물, 기여 항목, 완료확인, 평가, 이력은 회원이 아니라 조 참여를 가리킴',
     '같은 회원도 과제마다 다른 조에서 다른 역할을 맡기 때문',
-    '학생 요청은 그 조의 조원인지를 조 참여 하나로 검사함. 교수 요청은 과제를 만든 교수인지로 검사함',
-    '조장도 따로 두지 않고 조 참여의 <code>leader</code> 컬럼으로 표시함'] },
-  { title: '설계 판단 2. 과제 번호 복사와 묶음 UNIQUE', view: 'p', dir: 'RIGHT', keys: ['assignment', 'team', 'team_member'],
+    '학생의 요청은 그 조의 조원인지를 조 참여로 검사함. 교수의 요청은 그 과제를 만든 교수인지로 검사함',
+    '조장도 테이블을 따로 두지 않고 조 참여의 <code>leader</code> 컬럼으로 표시함'] },
+  { title: '설계 판단 2. 과제 번호 복사와 묶음 UNIQUE', who: '윤장현', view: 'p', dir: 'RIGHT', keys: ['assignment', 'team', 'team_member'],
     rows: ['team.assignment_id', 'team_member.assignment_id', 'team_member.member_id', 'team_member.team_id'], lines: [
-    '같은 과제에서 회원 한 명은 한 조에만 참여해야 함',
-    'UNIQUE는 한 테이블의 컬럼만 묶을 수 있어서, 조의 과제 번호를 조 참여에 복사함',
-    '<code>UNIQUE(assignment_id, member_id)</code>로 데이터베이스가 직접 막음',
-    '복사한 값은 조 참여를 만들 때 조에서 한 번만 가져오고 바꾸지 않음'] },
-  { title: '설계 판단 3. 완료확인의 두 대상', view: 'p', dir: 'RIGHT', keys: ['team_member', 'deliverable', 'contribution', 'confirmation'],
+    '규칙: 같은 과제에서 회원 한 명은 한 조에만 참여함',
+    'UNIQUE는 한 테이블 안의 컬럼만 묶을 수 있음. 그래서 조의 과제 번호를 조 참여에 복사함',
+    '<code>UNIQUE(assignment_id, member_id)</code>: 같은 과제와 같은 회원의 조합은 한 번만 저장됨',
+    '복사한 값은 조 참여를 만들 때 한 번만 넣고 바꾸지 않음'] },
+  { title: '설계 판단 3. 완료확인의 두 대상', who: '장호진', view: 'p', dir: 'RIGHT', keys: ['team_member', 'deliverable', 'contribution', 'confirmation'],
     rows: ['confirmation.deliverable_id', 'confirmation.contribution_id', 'confirmation.confirmer_id'], lines: [
-    '확인 대상은 산출물 또는 기여 항목',
-    '대상 종류와 대상 번호 한 쌍으로 두면 대상 번호에 외래 키를 걸 수 없음',
-    '대상마다 NULL을 허용하는 외래 키를 하나씩 두고, CHECK로 정확히 하나만 값이 있게 함. 점선이 이 배타 관계임',
-    '자기가 올린 산출물과 자기가 맡은 기여 항목은 확인할 수 없고, 기여 항목은 완료 보고 뒤에만 확인함. 이 규칙은 서버가 검사함'] },
-  { title: '설계 판단 4. 지우지 않고 쌓음', view: 'p', keys: ['team_member', 'role_history', 'leader_history', 'deliverable'],
+    '완료확인의 대상은 산출물 또는 기여 항목',
+    '대상 번호 컬럼을 하나만 두면 어느 테이블의 번호인지 알 수 없어서 외래 키를 걸 수 없음',
+    '그래서 외래 키를 두 개 두고, CHECK로 둘 중 하나만 값이 있게 함. 점선이 이 관계임',
+    '자기 기록은 확인할 수 없고, 기여 항목은 완료 보고 뒤에만 확인함. 이 규칙은 서버가 검사함'] },
+  { title: '설계 판단 4. 지우지 않고 쌓음', who: '김효민', view: 'p', keys: ['team_member', 'role_history', 'leader_history', 'deliverable'],
     rows: ['role_history.team_member_id', 'leader_history.previous_leader_id', 'leader_history.new_leader_id', 'deliverable.deleted_at'], lines: [
-    '역할과 조장이 바뀌면 이전 값을 이력 테이블에 한 행씩 쌓음',
+    '역할이나 조장이 바뀌면 이전 값을 이력 테이블에 한 행씩 쌓음',
     '산출물 삭제, 기여 항목 취소, 완료확인 취소는 행을 지우지 않고 시각만 남김',
-    '외래 키의 삭제 규칙은 기본값(NO ACTION)이라 다른 행이 가리키는 행은 지울 수 없음',
-    '실제로 지우는 것은 평가 임시 저장뿐이고, 이 테이블을 가리키는 테이블은 없음'] },
-  { title: '동료평가', view: 'p', keys: ['team_member', 'evaluation', 'evaluation_draft'],
+    '다른 행이 가리키고 있는 행은 데이터베이스가 지우지 못하게 막음',
+    '실제로 지우는 것은 평가 임시 저장뿐. 이 테이블을 가리키는 테이블은 없음'] },
+  { title: '동료평가', who: '김효민', view: 'p', keys: ['team_member', 'evaluation', 'evaluation_draft'],
     rows: ['evaluation.evaluator_id', 'evaluation.target_id', 'evaluation_draft.evaluator_id', 'evaluation_draft.target_id'], lines: [
-    '평가자와 대상이 모두 조 참여를 가리킴',
-    '<code>UNIQUE(evaluator_id, target_id)</code>로 같은 대상을 두 번 평가하지 못함',
-    'CHECK로 자기 평가를 막고, 점수 6개는 1~5만 받음',
-    '임시 저장은 고른 점수만 저장하고 제출하면 지움. 점수와 의견은 교수만 열람함'] },
-  { title: '데이터베이스 제약으로 두지 않은 규칙', view: 'p', dir: 'RIGHT', keys: ['assignment', 'team_member', 'contribution'],
+    '평가한 조원과 평가받은 조원이 모두 조 참여를 가리킴',
+    '<code>UNIQUE(evaluator_id, target_id)</code>: 같은 조원을 두 번 평가할 수 없음',
+    'CHECK로 자기 자신 평가를 막고, 점수 6개는 1~5만 받음',
+    '임시 저장은 고른 점수만 저장하고, 제출하면 지움. 점수와 의견은 교수만 봄'] },
+  { title: '데이터베이스 제약으로 두지 않은 규칙', who: '윤장현', view: 'p', dir: 'RIGHT', keys: ['assignment', 'team_member', 'contribution'],
     rows: ['team_member.leader', 'assignment.professor_id', 'contribution.assignee_id', 'contribution.team_id'], lines: [
-    '조마다 조장 한 명: 부분 UNIQUE 인덱스로 최대 한 명은 막을 수 있지만, 두 조원을 차례로 바꾸는 조장 교체와 부딪혀 서버가 조를 잠그고 처리함',
-    '교수만 과제를 만듦: CHECK는 다른 테이블의 회원 유형을 볼 수 없음',
-    '담당 조원은 같은 조 조원: 복합 외래 키로 막을 수 있지만 키 구성이 복잡해져 서버가 검사함',
-    '조원끼리 평가 비공개: 읽기 권한은 저장 제약으로 표현할 수 없음'] },
+    '조마다 조장은 한 명: 조장을 바꿀 때 두 조원의 값을 차례로 바꾸므로, 서버가 그 조를 잠그고 처리함',
+    '교수만 과제를 만듦: CHECK는 같은 테이블의 값만 볼 수 있어서, 서버가 회원 유형을 검사함',
+    '담당 조원은 같은 조의 조원: 데이터베이스로 막으면 구조가 복잡해져서 서버가 검사함',
+    '조원끼리 평가를 볼 수 없음: 누가 볼 수 있는지는 데이터베이스 제약으로 정할 수 없어서 서버가 검사함'] },
 ];
 let wasWide = null, stepToken = 0;
 async function stepView(i, v) {
@@ -7287,7 +7303,7 @@ async function showStep(i) {
   switchView(v);
   document.querySelectorAll('.chip').forEach(c => { c.classList.remove('on', 'linked'); c.classList.toggle('linked', st.keys.length !== ALL.length && st.keys.includes(c.dataset.k)); });
   drawer.hidden = false; drawer.classList.add('tour');
-  drawer.innerHTML = `<div class="top"><span class="lvtag">발표 순서 ${n + 1} / ${STEPS.length}</span><button class="close" id="tourEnd">끝내기</button></div>
+  drawer.innerHTML = `<div class="top"><div><span class="lvtag">발표 순서 ${n + 1} / ${STEPS.length}</span><span class="who">발표 ${st.who}</span></div><button class="close" id="tourEnd">끝내기</button></div>
     <h3>${st.title}</h3>
     <ul class="tlines">${st.lines.map(l => `<li>${l}</li>`).join('')}</ul>
     <div class="tnav"><button id="tPrev" ${n === 0 ? 'disabled' : ''}>이전</button><span class="dots">${STEPS.map((_, j) => `<button class="dot${j === n ? ' on' : ''}" data-i="${j}" aria-label="${j + 1}번째"></button>`).join('')}</span><button id="tNext" ${n === STEPS.length - 1 ? 'disabled' : ''}>다음</button></div>
