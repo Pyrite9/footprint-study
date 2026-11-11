@@ -238,7 +238,7 @@ CREATE TABLE team (
 - 컬럼 두 개 이상을 쓰는 제약(복합 UNIQUE, 두 컬럼을 비교하는 CHECK)은 표 아래 "테이블 제약" 줄에 쓸 것
 - 찾아볼 것: `PostgreSQL constraints`, `PostgreSQL 제약조건`
 
----
+----
 
 **예상 수행 시간: 약 3시간**
 
