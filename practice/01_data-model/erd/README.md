@@ -13,8 +13,11 @@
 | `erd_logical_1.png`, `erd_logical_2.png` | 논리 ERD 그림. 원고에 들어감 |
 | `erd_physical_1.png`, `erd_physical_2.png` | 물리 ERD 그림. 원고에 들어감 |
 | `schema.sql` | PostgreSQL에서 테이블을 만드는 SQL |
-| `업무데이터대응_v1.pdf` | 단위 업무와 데이터 대응. 업무마다 어떤 테이블을 만들고, 읽고, 바꾸는지 정리함 |
-| `업무데이터대응_원고_v1.md` | 위 PDF의 원고 |
+| `업무데이터대응_v2.pdf` | 단위 업무와 데이터 대응. 업무마다 어떤 테이블을 만들고, 읽고, 바꾸는지 정리함. 데모 코드(2026.11.12)와 맞춤 |
+| `업무데이터대응_원고_v2.md` | 위 PDF의 원고 |
+| `ERD발표순서_v1.pdf` | ERD 캔버스의 발표 순서 10단계를 단계별 화면과 함께 정리함 |
+| `ERD발표순서_원고_v1.md`, `erd_tour/` | 위 PDF의 원고와 단계별 화면 그림 |
+| `build_pdf.py` | 원고(md)로 PDF를 만드는 스크립트 |
 
 ## ERD 캔버스 보는 방법
 
@@ -38,3 +41,10 @@
 - 단계: 외래 키가 없는 테이블이 0단계임. 나머지는 가리키는 테이블 중 가장 깊은 단계에 1을 더함
 - 물리 화면의 선은 외래 키 컬럼에서 나와, 가리키는 테이블의 `id` 컬럼으로 들어감
 - 선 색은 어느 테이블의 `id`를 가리키는지에 따라 다름
+
+## PDF 다시 만들기
+
+- 필요한 것: Python 3, `pip install playwright`, `playwright install chromium`, Noto Sans CJK KR, Noto Serif CJK KR 글꼴
+- 업무 데이터 대응: `python3 build_pdf.py 업무데이터대응_원고_v2.md 업무데이터대응_v2.pdf`
+- 발표 순서: `python3 build_pdf.py ERD발표순서_원고_v1.md ERD발표순서_v1.pdf --h3-page` (단계마다 새 쪽에서 시작)
+- 원고 맨 위의 `> 항목: 내용` 줄이 요약 상자가 됨
