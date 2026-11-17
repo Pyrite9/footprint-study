@@ -168,9 +168,9 @@ VS Code 왼쪽 파일 목록에서 `frontend/src/components`를 오른쪽 클릭
 | 화면에 나온 것 | 이유 | 할 일 |
 |---|---|---|
 | `Failed to resolve import "../format"` | `mine` 폴더 안이라 경로가 한 단계 더 깊음 | `'../format'` → `'../../format'` |
-| `does not provide an export named 'default'` | 파일 맨 아래 `export default` 줄이 없음 | 원본 마지막 줄을 보고 같은 줄을 씀 |
+| 화면이 하얗고, F12 → [Console]에 `does not provide an export named 'default'` | 파일 맨 아래 `export default` 줄이 없음 | 원본 마지막 줄을 보고 같은 줄을 씀 |
 | 화면 전체가 하얗게 나옴 | 내 코드에 오류가 있음 | 브라우저에서 F12 → [Console] 탭의 빨간 글자를 캡처해서 단체방에 올림 |
-| 데이터가 안 나오거나 로그인 화면으로 돌아감 | 가짜 API가 꺼짐 | 가짜 API 터미널에서 `npm run mock`을 다시 입력 |
+| [로그인]을 눌러도 넘어가지 않거나, 데이터가 안 나옴 | 가짜 API가 꺼짐 | 가짜 API 터미널에서 `npm run mock`을 다시 입력 |
 
 ## 3. 백엔드
 
