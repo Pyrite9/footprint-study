@@ -264,7 +264,7 @@ IntelliJ에서 `mission3-backend` 폴더를 열고, 편집 화면 오른쪽 위�
 | `http://localhost:8080/assignments` | 과제 3건 |
 | `http://localhost:8080/h2-console` | H2 로그인 화면 |
 
-H2 로그인 화면에 아래처럼 넣고 [Connect]를 누르면 테이블을 직접 볼 수 있습니다.
+H2 로그인 화면에 아래처럼 넣고 [Connect]를 누르면 테이블을 직접 볼 수 있습니다. JDBC URL 칸에 처음 적혀 있는 `jdbc:h2:~/test`는 지우고 넣습니다.
 
 | 칸 | 넣을 값 |
 |---|---|
@@ -296,14 +296,26 @@ SELECT * FROM TEAM;
 
 ### 3-4. 막혔을 때
 
+서버가 안 뜨면 IntelliJ 아래쪽 [Run] 창의 빨간 글자에서 아래 문구를 찾습니다.
+
 | 화면에 나온 것 | 이유 | 할 일 |
 |---|---|---|
-| `Port 8080 was already in use` | 서버가 이미 하나 켜져 있음 | IntelliJ 아래쪽 [Run] 창의 빨간 네모 버튼으로 끄고 다시 실행 |
-| `Cannot load driver class: org.h2.Driver` | H2가 아직 프로젝트에 안 들어옴 | 3-2의 2번(`build.gradle`) 확인 → 코끼리 버튼 |
-| `Failed to configure a DataSource` | `application.yml`을 제대로 못 읽음 | 3-2의 3번 확인. 들여쓰기가 다르면 이 오류가 남 |
-| h2-console에서 `Database ... not found` | JDBC URL이 다름 | `jdbc:h2:mem:footprint`를 그대로 넣음 |
-| h2-console에 `TEAM` 테이블이 없음 | `Team.java`에 `@Entity`가 없거나, 서버를 다시 실행하지 않음 | `@Entity` 확인 → 서버 다시 실행 |
-| 브라우저에 `Whitelabel Error Page`와 `404` | 브라우저 주소 ≠ Controller 주소 | `@RequestMapping`, `@GetMapping`의 주소와 브라우저 주소를 비교 |
+| `Port 8080 was already in use` | 서버가 이미 하나 켜져 있음 | [Run] 창의 빨간 네모 버튼으로 끄고 다시 실행 |
+| `Failed to load driver class org.h2.Driver` | H2가 아직 프로젝트에 안 들어옴 | 3-2의 2번(`build.gradle`) 확인 → 코끼리 버튼 |
+| `Failed to load driver class org.postgresql.Driver` | `application.yml`을 아직 안 바꿈 | 3-2의 3번 확인 |
+| `mapping values are not allowed here`, `found duplicate key`, `found character '\t(TAB)'` | `application.yml`의 들여쓰기가 틀림 | 3-2의 3번과 칸 수를 똑같이 맞춤. 탭(Tab) 대신 빈칸(Space)으로 띄움 |
+| `Not a managed type: ...Team` | `Team.java`에 `@Entity`가 없음 | `Team.java` 위에 `@Entity`를 붙임 |
+| `may not use '@Column' ... (use '@JoinColumn' instead)` | `@ManyToOne` 필드에 `@Column`을 씀 | `@Column` 대신 `@JoinColumn(name = "assignment_id", nullable = false)` |
+| `Unique index or primary key violation` (`Started BackendApplication` 바로 뒤에 나오고 서버가 꺼짐) | 시작 데이터에 같은 초대 코드가 두 번 들어감 | `DataInitializer`의 초대 코드를 서로 다르게 |
+
+서버는 떴는데 결과가 이상할 때
+
+| 화면에 나온 것 | 이유 | 할 일 |
+|---|---|---|
+| `/h2-console`만 `Whitelabel Error Page`와 `404` | `application.yml`의 `h2:`, `console:`, `enabled:` 줄 들여쓰기가 틀림 | 3-2의 3번과 칸 수를 똑같이 맞춤 |
+| h2-console에서 `Database ... not found` | JDBC URL이 다름 (처음 적혀 있는 `jdbc:h2:~/test` 그대로 둠 등) | `jdbc:h2:mem:footprint`를 그대로 넣음 |
+| h2-console에 `TEAM` 테이블이 없음 | 코드를 고친 뒤 서버를 다시 실행하지 않음 | 서버 다시 실행 |
+| 내 API 주소에 `Whitelabel Error Page`와 `404` | 브라우저 주소 ≠ Controller 주소 | `@RequestMapping`, `@GetMapping`의 주소와 브라우저 주소를 비교 |
 
 ## 4. 제출
 

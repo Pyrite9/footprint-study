@@ -342,7 +342,7 @@ mission3-backend/src/main/java/com/footprint/backend/
 | `entity/Team.java` | 새로 만듦 | `entity/Assignment.java` | 조 테이블과 대응하는 Entity |
 | `repository/TeamRepository.java` | 새로 만듦 | `repository/AssignmentRepository.java` | 과제 번호로 조 목록 찾기 |
 | `dto/TeamSummaryResponse.java` | 새로 만듦 | `dto/AssignmentResponse.java` | 조 1개의 응답 모양 (`id`, `name`) |
-| `dto/AssignmentDetailResponse.java` | 새로 만듦 | `dto/AssignmentResponse.java` | 과제와 조 목록을 함께 담는 응답 모양 |
+| `dto/AssignmentDetailResponse.java` | 새로 만듦 | `dto/AssignmentResponse.java` | 과제와 조 목록을 함께 담는 응답 모양 (`id`, `title`, `startDate`, `endDate`, `teams`) |
 | `config/DataInitializer.java` | 고침 | | 첫 번째 과제에 조 2개 저장 |
 | `service/AssignmentService.java` | 고침 | | 조 목록 찾기 |
 | `controller/AssignmentController.java` | 고침 | | `GET /assignments/{id}`가 새 응답 모양을 돌려주게 함 |
@@ -358,6 +358,7 @@ mission3-backend/src/main/java/com/footprint/backend/
 힌트
 
 - Entity는 예시 프로젝트의 `entity/Assignment.java`와 같은 방식(`@Entity`, `@Getter`, `@NoArgsConstructor`)으로 만듭니다.
+- `assignment` 필드에는 `@Column` 대신 `@JoinColumn(name = "assignment_id", nullable = false)`를 씁니다. `@ManyToOne`과 `@Column`을 같이 쓰면 서버가 뜨지 않습니다.
 - `DataInitializer`에서 과제를 저장하면 돌아오는 값을 변수에 담아 두었다가 조를 만들 때 넘기면, 그 과제의 조가 됩니다.
 - 조를 저장하려면 `DataInitializer`의 생성자에 `TeamRepository`를 추가합니다.
 
@@ -508,6 +509,7 @@ mission3-backend/src/main/java/com/footprint/backend/
 힌트
 
 - Entity는 예시 프로젝트의 `entity/Assignment.java`와 같은 방식(`@Entity`, `@Getter`, `@NoArgsConstructor`)으로 만듭니다.
+- `assignment` 필드에는 `@Column` 대신 `@JoinColumn(name = "assignment_id", nullable = false)`를 씁니다. `@ManyToOne`과 `@Column`을 같이 쓰면 서버가 뜨지 않습니다.
 - `DataInitializer`에서 과제를 저장하면 돌아오는 값을 변수에 담아 두었다가 조를 만들 때 넘기면, 그 과제의 조가 됩니다.
 - 조를 저장하려면 `DataInitializer`의 생성자에 `TeamRepository`를 추가합니다.
 
@@ -538,4 +540,4 @@ mission3-backend/src/main/java/com/footprint/backend/
 
 ### (선택) 추가 실험
 
-2조의 초대 코드를 `ABC123`으로 바꾸고 서버를 실행해서, 조사서 5번에 적은 "UNIQUE 위반" 오류를 직접 보고 캡처합니다.
+2조의 초대 코드를 `ABC123`으로 바꾸고 서버를 실행해서, 내 `data_model.md`에 적은 `invite_code`의 UNIQUE 위반(`Unique index or primary key violation`)을 직접 보고 캡처합니다. `Started BackendApplication`이 먼저 찍힌 뒤에 오류가 나고 서버가 꺼지니, 로그를 끝까지 봅니다.
