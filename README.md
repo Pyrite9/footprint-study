@@ -2,6 +2,13 @@
 
 발자국 팀의 학습용 저장소입니다. 기간은 09.18 ~ 10.16입니다.
 
+## 화면 지도 (새 저장소 개발)
+
+2026.11.30부터 새 저장소 [footprint](https://github.com/Pyrite9/footprint)에서 각자 맡은 부분을 만듭니다.
+
+- [발자국 화면 지도](https://pyrite9.github.io/footprint-study/map/) — 주차 로드맵, 화면마다 만들 컴포넌트, 진행 방법이 있습니다. 내 이름을 누르면 내 것만 나옵니다.
+- [발자국 컴포넌트 지도](https://pyrite9.github.io/footprint-study/map/components.html) — 데모의 전체 구조를 보는 참고용입니다.
+
 ## 읽는 순서
 
 1. [공통](docs/00_common.md) — 전원이 먼저 읽습니다. 규칙과 제출 방법이 있습니다.
